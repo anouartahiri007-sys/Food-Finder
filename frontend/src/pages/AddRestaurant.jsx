@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Utensils, MapPin, Phone, Globe, Clock, DollarSign, Image as ImageIcon, Save, ArrowLeft } from 'lucide-react';
+import { toast } from 'react-toastify';
 import api from '../api/axios';
+
 
 const AddRestaurant = () => {
     const navigate = useNavigate();
@@ -52,10 +54,11 @@ const AddRestaurant = () => {
             await api.post('/restaurants', data, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
+            toast.success("Établissement ajouté avec succès !");
             navigate('/dashboard');
         } catch (error) {
             console.error('Error adding restaurant', error);
-            alert('Erreur lors de l\'ajout du restaurant. Veuillez vérifier les champs.');
+            toast.error('Erreur lors de l\'ajout du restaurant. Veuillez vérifier les champs.');
         } finally {
             setLoading(false);
         }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import api from '../../api/axios';
 
 const Login = () => {
@@ -8,13 +9,11 @@ const Login = () => {
         email: '',
         password: ''
     });
-    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        setError('');
 
         try {
             // Require CSRF cookie first for Sanctum authentication
@@ -22,11 +21,12 @@ const Login = () => {
 
             const response = await api.post('/login', formData);
             localStorage.setItem('token', response.data.access_token);
+            toast.success("Connexion réussie !");
 
             // Force redirect to reload app state with user data
             window.location.href = '/';
         } catch (err) {
-            setError(err.response?.data?.message || 'Identifiants incorrects');
+            toast.error(err.response?.data?.message || 'Identifiants incorrects');
         } finally {
             setLoading(false);
         }
@@ -36,8 +36,6 @@ const Login = () => {
         <div className="auth-container">
             <div className="card auth-form">
                 <h2 className="auth-title">Connexion</h2>
-
-                {error && <div style={{ color: 'var(--danger)', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <div>

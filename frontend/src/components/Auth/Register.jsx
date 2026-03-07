@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import api from '../../api/axios';
 
 const Register = () => {
@@ -18,14 +19,12 @@ const Register = () => {
         phone: ''
     });
     const [profilePhoto, setProfilePhoto] = useState(null);
-    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [registeredEmail, setRegisteredEmail] = useState('');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        setError('');
 
         // 18+ Verification
         const birthDate = new Date(formData.date_of_birth);
@@ -37,13 +36,13 @@ const Register = () => {
         }
 
         if (age < 18) {
-            setError('Vous devez avoir au moins 18 ans pour vous inscrire.');
+            toast.error('Vous devez avoir au moins 18 ans pour vous inscrire.');
             setLoading(false);
             return;
         }
 
         if (!formData.accepted_privacy_policy) {
-            setError('Vous devez accepter la politique de confidentialité.');
+            toast.error('Vous devez accepter la politique de confidentialité.');
             setLoading(false);
             return;
         }
@@ -61,13 +60,14 @@ const Register = () => {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
+            toast.success("Inscription validée !");
             navigate('/verify-email', { state: { email: formData.email } });
         } catch (err) {
             if (err.response?.status === 422 && err.response.data.errors) {
                 const messages = Object.values(err.response.data.errors).flat();
-                setError(messages.join(' '));
+                toast.error(messages.join(' '));
             } else {
-                setError(err.response?.data?.message || 'Une erreur est survenue lors de l\'inscription.');
+                toast.error(err.response?.data?.message || 'Une erreur est survenue lors de l\'inscription.');
             }
         } finally {
             setLoading(false);
@@ -78,7 +78,6 @@ const Register = () => {
         <div className="auth-container">
             <div className="card auth-form" style={{ maxWidth: '700px' }}>
                 <h2 className="auth-title">Créer un compte Food Finder</h2>
-                {error && <div className="alert alert-danger">{error}</div>}
 
                 <form onSubmit={handleSubmit} className="form-grid">
                     <div className="form-group">

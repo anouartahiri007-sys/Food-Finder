@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { PlusCircle, Edit, Trash2, MapPin, Users, Calendar, Star, Check, X, Clock, Store } from 'lucide-react';
+import { toast } from 'react-toastify';
 import api from '../api/axios';
 import { useNavigate, Link } from 'react-router-dom';
 
@@ -41,8 +42,9 @@ const RestaurateurDashboard = () => {
             setReservations(prev => prev.map(res =>
                 res.id === id ? { ...res, status } : res
             ));
+            toast.success(`Le statut a été mis à jour avec succès : ${status}`);
         } catch (error) {
-            alert('Erreur lors de la mise à jour du statut');
+            toast.error('Erreur lors de la mise à jour du statut');
         }
     };
 
@@ -51,8 +53,9 @@ const RestaurateurDashboard = () => {
             try {
                 await api.delete(`/restaurants/${id}`);
                 setRestaurants(restaurants.filter(r => r.id !== id));
+                toast.success('Le restaurant a été supprimé avec succès.');
             } catch (error) {
-                alert('Erreur lors de la suppression');
+                toast.error('Erreur lors de la suppression');
             }
         }
     };

@@ -12,10 +12,13 @@ import RestaurateurDashboard from './pages/RestaurateurDashboard';
 import Profile from './pages/Profile';
 import AddRestaurant from './pages/AddRestaurant';
 import EditRestaurant from './pages/EditRestaurant';
-import StaticPage from './pages/StaticPage';
 import OwnerHome from './pages/OwnerHome';
+import StaticPage from './pages/StaticPage';
+import NotFound from './pages/NotFound';
 import AdminLogin from './components/Auth/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 
 function App() {
@@ -91,6 +94,18 @@ function App() {
             )}
           </nav>
         </header>
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme={theme === "dark" ? "dark" : "light"}
+        />
 
         <main className="main-content">
           <Routes>
@@ -113,6 +128,9 @@ function App() {
             <Route path="/terms" element={<StaticPage />} />
             <Route path="/privacy" element={<StaticPage />} />
             <Route path="/rgpd" element={<StaticPage />} />
+
+            {/* Catch-all Route for 404 */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
 

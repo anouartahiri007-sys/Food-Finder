@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User, Mail, Calendar, Camera, Save, MapPin, Clock } from 'lucide-react';
+import { toast } from 'react-toastify';
 import api from '../api/axios';
 
 const Profile = () => {
@@ -14,7 +15,6 @@ const Profile = () => {
     });
     const [photoFile, setPhotoFile] = useState(null);
     const [photoPreview, setPhotoPreview] = useState(null);
-    const [message, setMessage] = useState({ type: '', text: '' });
 
     useEffect(() => {
         const fetchData = async () => {
@@ -55,7 +55,6 @@ const Profile = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSaving(true);
-        setMessage({ type: '', text: '' });
 
         try {
             const data = new FormData();
@@ -71,9 +70,9 @@ const Profile = () => {
             });
 
             setUser(response.data.user);
-            setMessage({ type: 'success', text: 'Profil mis à jour avec succès !' });
+            toast.success('Profil mis à jour avec succès !');
         } catch (err) {
-            setMessage({ type: 'error', text: 'Erreur lors de la mise à jour du profil.' });
+            toast.error('Erreur lors de la mise à jour du profil.');
         } finally {
             setSaving(false);
         }
@@ -87,12 +86,6 @@ const Profile = () => {
                 {/* Profile Edit Section */}
                 <div className="card">
                     <h2 className="auth-title" style={{ textAlign: 'left', marginBottom: '1.5rem' }}>Mon Profil</h2>
-
-                    {message.text && (
-                        <div className={`alert alert-${message.type === 'success' ? 'success' : 'danger'}`} style={{ marginBottom: '1.5rem' }}>
-                            {message.text}
-                        </div>
-                    )}
 
                     <form onSubmit={handleSubmit}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem' }}>

@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Utensils, MapPin, Phone, Globe, Clock, DollarSign, Image as ImageIcon, Save, ArrowLeft } from 'lucide-react';
+import { toast } from 'react-toastify';
 import api from '../api/axios';
+
 
 const EditRestaurant = () => {
     const { id } = useParams();
@@ -43,7 +45,7 @@ const EditRestaurant = () => {
                 if (data.image_url) setPreview(data.image_url);
             } catch (error) {
                 console.error('Error fetching restaurant', error);
-                alert('Erreur lors de la récupération des données.');
+                toast.error('Erreur lors de la récupération des données.');
             } finally {
                 setLoading(false);
             }
@@ -85,10 +87,11 @@ const EditRestaurant = () => {
             await api.post(`/restaurants/${id}`, data, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
+            toast.success("Modifications enregistrées !");
             navigate('/dashboard');
         } catch (error) {
             console.error('Error updating restaurant', error);
-            alert('Erreur lors de la mise à jour du restaurant.');
+            toast.error('Erreur lors de la mise à jour du restaurant.');
         } finally {
             setSaving(false);
         }

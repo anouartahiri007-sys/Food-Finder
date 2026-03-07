@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Users, Store, Clock, Mail, ShieldCheck, Search, Download, ExternalLink, Trash2 } from 'lucide-react';
+import { toast } from 'react-toastify';
 import api from '../api/axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -69,7 +70,7 @@ const AdminDashboard = () => {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <button className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <button className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => toast.info('Export CSV est en cours de développement.')}>
                         <Download size={18} /> Exporter CSV
                     </button>
                 </div>

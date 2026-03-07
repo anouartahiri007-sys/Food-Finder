@@ -1,32 +1,32 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShieldAlert, LogIn, Lock, Mail } from 'lucide-react';
-import api from '../api/axios';
+import { toast } from 'react-toastify';
+import api from '../../api/axios';
 
 const AdminLogin = () => {
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);
-        setError('');
 
         try {
             const response = await api.post('/login', { email, password });
             if (response.data.user.role === 'admin') {
                 localStorage.setItem('token', response.data.token);
+                toast.success("Bienvenue dans l'espace Administration.");
                 // Force reload to update App state
                 window.location.href = '/admin/dashboard';
             } else {
-                setError('Accès refusé. Seuls les administrateurs peuvent se connecter ici.');
+                toast.error('Accès refusé. Seuls les administrateurs peuvent se connecter ici.');
                 localStorage.removeItem('token');
             }
         } catch (err) {
-            setError('Identifiants admin incorrects.');
+            toast.error('Identifiants admin incorrects.');
         } finally {
             setLoading(false);
         }
@@ -42,8 +42,6 @@ const AdminLogin = () => {
                     <h2 style={{ fontSize: '1.5rem', fontWeight: '700' }}>Connexion Administration</h2>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Espace réservé au personnel autorisé.</p>
                 </div>
-
-                {error && <div className="alert alert-danger" style={{ marginBottom: '1.5rem' }}>{error}</div>}
 
                 <form onSubmit={handleLogin}>
                     <div className="form-group">
