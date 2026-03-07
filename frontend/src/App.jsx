@@ -13,6 +13,9 @@ import Profile from './pages/Profile';
 import AddRestaurant from './pages/AddRestaurant';
 import EditRestaurant from './pages/EditRestaurant';
 import StaticPage from './pages/StaticPage';
+import OwnerHome from './pages/OwnerHome';
+import AdminLogin from './components/Auth/AdminLogin';
+import AdminDashboard from './pages/AdminDashboard';
 import './App.css';
 
 function App() {
@@ -74,6 +77,9 @@ function App() {
                 {user.role === 'owner' && (
                   <Link to="/dashboard" className="nav-item">Tableau de bord</Link>
                 )}
+                {user.role === 'admin' && (
+                  <Link to="/admin/dashboard" className="nav-item" style={{ color: 'var(--danger)', fontWeight: '700' }}>SaaS Admin</Link>
+                )}
                 <Link to="/profile" className="nav-item">Profil</Link>
                 <button onClick={handleLogout} className="btn btn-secondary">Déconnexion</button>
               </>
@@ -88,14 +94,16 @@ function App() {
 
         <main className="main-content">
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={user?.role === 'owner' ? <OwnerHome /> : <Home />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/register" element={<Register />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/restaurants/:id" element={<RestaurantDetail />} />
-            <Route path="/dashboard" element={<RestaurateurDashboard />} />
+            <Route path="/dashboard" element={user?.role === 'owner' ? <RestaurateurDashboard /> : <Home />} />
+            <Route path="/admin/dashboard" element={user?.role === 'admin' ? <AdminDashboard /> : <Home />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/add-restaurant" element={<AddRestaurant />} />
+            <Route path="/add-restaurant" element={user?.role === 'owner' ? <AddRestaurant /> : <Home />} />
             <Route path="/restaurants/:id/edit" element={<EditRestaurant />} />
 
             {/* Legal and Info Routes */}
@@ -127,6 +135,7 @@ function App() {
                 <Link to="/about">À propos</Link>
                 <Link to="/contact">Contact</Link>
                 <Link to="/help">Aide</Link>
+                <Link to="/admin/login" style={{ opacity: 0.6, fontSize: '0.8rem' }}>Accès Admin</Link>
               </div>
 
               {user?.role === 'owner' && (

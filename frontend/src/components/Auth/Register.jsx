@@ -11,9 +11,11 @@ const Register = () => {
         password: '',
         password_confirmation: '',
         date_of_birth: '',
+        gender: '',
         role: 'customer',
         accepted_privacy_policy: false,
-        is_over_18: false
+        website: '',
+        phone: ''
     });
     const [profilePhoto, setProfilePhoto] = useState(null);
     const [error, setError] = useState('');
@@ -25,8 +27,23 @@ const Register = () => {
         setLoading(true);
         setError('');
 
-        if (!formData.accepted_privacy_policy || !formData.is_over_18) {
-            setError('Vous devez accepter la politique de confidentialité et confirmer que vous avez plus de 18 ans.');
+        // 18+ Verification
+        const birthDate = new Date(formData.date_of_birth);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+
+        if (age < 18) {
+            setError('Vous devez avoir au moins 18 ans pour vous inscrire.');
+            setLoading(false);
+            return;
+        }
+
+        if (!formData.accepted_privacy_policy) {
+            setError('Vous devez accepter la politique de confidentialité.');
             setLoading(false);
             return;
         }
@@ -40,20 +57,17 @@ const Register = () => {
                 data.append('profile_photo', profilePhoto);
             }
 
-            const response = await api.post('/register', data, {
+            await api.post('/register', data, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
-            setRegisteredEmail(formData.email);
-            // Instead of redirecting to home, we'll show the verification screen
-            // For now, let's just alert or move to a "Verify" state
             navigate('/verify-email', { state: { email: formData.email } });
         } catch (err) {
             if (err.response?.status === 422 && err.response.data.errors) {
                 const messages = Object.values(err.response.data.errors).flat();
                 setError(messages.join(' '));
             } else {
-                setError(err.response?.data?.message || 'Une erreur est survenue lors de l\'inscription. Veuillez réessayer.');
+                setError(err.response?.data?.message || 'Une erreur est survenue lors de l\'inscription.');
             }
         } finally {
             setLoading(false);
@@ -62,7 +76,7 @@ const Register = () => {
 
     return (
         <div className="auth-container">
-            <div className="card auth-form" style={{ maxWidth: '600px' }}>
+            <div className="card auth-form" style={{ maxWidth: '700px' }}>
                 <h2 className="auth-title">Créer un compte Food Finder</h2>
                 {error && <div className="alert alert-danger">{error}</div>}
 
@@ -89,15 +103,18 @@ const Register = () => {
                         />
                     </div>
 
-                    <div className="form-group full-width">
-                        <label>Email</label>
-                        <input
-                            type="email"
+                    <div className="form-group">
+                        <label>Genre</label>
+                        <select
                             className="input-base"
                             required
-                            value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        />
+                            value={formData.gender}
+                            onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                        >
+                            <option value="">Sélectionner</option>
+                            <option value="Male">Homme</option>
+                            <option value="Female">Femme</option>
+                        </select>
                     </div>
 
                     <div className="form-group">
@@ -111,11 +128,22 @@ const Register = () => {
                         />
                     </div>
 
-                    <div className="form-group">
+                    <div className="form-group full-width">
+                        <label>Email</label>
+                        <input
+                            type="email"
+                            className="input-base"
+                            required
+                            value={formData.email}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        />
+                    </div>
+
+                    <div className="form-group full-width">
                         <label>Rôle</label>
                         <select
                             className="input-base"
-                            value={formData.role}
+                            value={formData.role ?? 'customer'}
                             onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                         >
                             <option value="customer">Client (Gourmet)</option>
@@ -123,14 +151,32 @@ const Register = () => {
                         </select>
                     </div>
 
-                    <div className="form-group full-width">
-                        <label>Photo de profil</label>
-                        <input
-                            type="file"
-                            className="input-base"
-                            onChange={(e) => setProfilePhoto(e.target.files[0])}
-                        />
-                    </div>
+                    {formData.role === 'owner' && (
+                        <>
+                            <div className="form-group">
+                                <label>Numéro de téléphone</label>
+                                <input
+                                    type="tel"
+                                    className="input-base"
+                                    required
+                                    placeholder="+212 ..."
+                                    value={formData.phone || ''}
+                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Lien du site web</label>
+                                <input
+                                    type="url"
+                                    className="input-base"
+                                    required
+                                    placeholder="https://..."
+                                    value={formData.website || ''}
+                                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                                />
+                            </div>
+                        </>
+                    )}
 
                     <div className="form-group">
                         <label>Mot de passe</label>
@@ -154,17 +200,16 @@ const Register = () => {
                         />
                     </div>
 
-                    <div className="checkbox-group full-width">
-                        <label className="checkbox-item">
-                            <input
-                                type="checkbox"
-                                required
-                                checked={formData.is_over_18}
-                                onChange={(e) => setFormData({ ...formData, is_over_18: e.target.checked })}
-                            />
-                            <span>J'ai plus de 18 ans</span>
-                        </label>
+                    <div className="form-group full-width">
+                        <label>Photo de profil</label>
+                        <input
+                            type="file"
+                            className="input-base"
+                            onChange={(e) => setProfilePhoto(e.target.files[0])}
+                        />
+                    </div>
 
+                    <div className="checkbox-group full-width">
                         <label className="checkbox-item">
                             <input
                                 type="checkbox"

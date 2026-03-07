@@ -123,12 +123,12 @@ const RestaurateurDashboard = () => {
                                     <p style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.2rem' }}>
                                         <MapPin size={16} /> {res.address}
                                     </p>
-                                    <div style={{ display: 'flex', gap: '1rem' }}>
-                                        <button className="btn btn-secondary" style={{ flex: 1, height: '38px', fontSize: '0.85rem' }} onClick={() => navigate(`/restaurants/${res.id}/edit`)}>
+                                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                        <button className="btn btn-secondary" style={{ flex: 1, height: '40px', fontSize: '0.85rem' }} onClick={() => navigate(`/restaurants/${res.id}/edit`)}>
                                             <Edit size={16} /> Éditer
                                         </button>
-                                        <button className="btn btn-secondary" style={{ color: '#ef4444', borderColor: '#ef444430', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px' }} onClick={() => handleDeleteRestaurant(res.id)}>
-                                            <Trash2 size={18} />
+                                        <button className="btn btn-secondary" style={{ flex: 1, height: '40px', fontSize: '0.85rem', color: '#ef4444', borderColor: '#ef4444' }} onClick={() => handleDeleteRestaurant(res.id)}>
+                                            <Trash2 size={16} /> Supprimer
                                         </button>
                                     </div>
                                 </div>
