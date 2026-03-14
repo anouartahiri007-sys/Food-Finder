@@ -12,11 +12,13 @@ const RestaurateurDashboard = () => {
     const [user, setUser] = useState(null);
     const [activeTab, setActiveTab] = useState('overview');
 
+    const [backendStats, setBackendStats] = useState(null);
+
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
                 // Fetch user first
-                const userRes = await api.get('/user');
+                const userRes = await api.get('/profile');
                 setUser(userRes.data);
 
                 // Then restaurants
@@ -26,6 +28,10 @@ const RestaurateurDashboard = () => {
                 // Then reservations
                 const reservationsRes = await api.get('/owner/reservations');
                 setReservations(reservationsRes.data);
+
+                // Fetch real stats
+                const statsRes = await api.get('/owner/stats');
+                setBackendStats(statsRes.data);
             } catch (error) {
                 console.error('Error fetching dashboard data:', error);
                 if (error.response?.status === 401) navigate('/login');
@@ -63,9 +69,10 @@ const RestaurateurDashboard = () => {
     if (loading) return <div className="loader-container"><div className="loader"></div></div>;
 
     const stats = [
-        { label: 'Restaurants', value: restaurants.length, icon: <Store size={20} />, color: '#6366f1' },
-        { label: 'Réservations', value: reservations.length, icon: <Calendar size={20} />, color: '#10b981' },
-        { label: 'Clients Uniques', value: new Set(reservations.map(r => r.user_id)).size, icon: <Users size={20} />, color: '#f59e0b' },
+        { label: 'Restaurants', value: backendStats?.restaurants_count || 0, icon: <Store size={20} />, color: '#6366f1' },
+        { label: 'Réservations', value: backendStats?.total_reservations || 0, icon: <Calendar size={20} />, color: '#10b981' },
+        { label: 'Note Moyenne', value: (backendStats?.average_rating || 0).toFixed(1), icon: <Star size={20} />, color: '#f59e0b' },
+        { label: 'Avis Totaux', value: backendStats?.total_reviews || 0, icon: <Users size={20} />, color: '#ec4899' },
     ];
 
     return (
@@ -92,18 +99,36 @@ const RestaurateurDashboard = () => {
             </div>
 
             {/* Main Tabs */}
-            <div style={{ display: 'flex', gap: '2rem', borderBottom: '1px solid var(--border-color)', marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', gap: '2rem', borderBottom: '1px solid var(--border-color)', marginBottom: '2rem', overflowX: 'auto' }}>
                 <button
                     onClick={() => setActiveTab('overview')}
-                    style={{ padding: '0.8rem 1rem', background: 'none', border: 'none', color: activeTab === 'overview' ? 'var(--primary)' : 'var(--text-muted)', borderBottom: activeTab === 'overview' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', fontWeight: '600' }}
+                    style={{ padding: '0.8rem 1rem', background: 'none', border: 'none', color: activeTab === 'overview' ? 'var(--primary)' : 'var(--text-muted)', borderBottom: activeTab === 'overview' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap' }}
                 >
                     Mes Restaurants
                 </button>
                 <button
                     onClick={() => setActiveTab('reservations')}
-                    style={{ padding: '0.8rem 1rem', background: 'none', border: 'none', color: activeTab === 'reservations' ? 'var(--primary)' : 'var(--text-muted)', borderBottom: activeTab === 'reservations' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', fontWeight: '600' }}
+                    style={{ padding: '0.8rem 1rem', background: 'none', border: 'none', color: activeTab === 'reservations' ? 'var(--primary)' : 'var(--text-muted)', borderBottom: activeTab === 'reservations' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap' }}
                 >
-                    Réservations Clients
+                    Réservations
+                </button>
+                <button
+                    onClick={() => setActiveTab('schedules')}
+                    style={{ padding: '0.8rem 1rem', background: 'none', border: 'none', color: activeTab === 'schedules' ? 'var(--primary)' : 'var(--text-muted)', borderBottom: activeTab === 'schedules' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap' }}
+                >
+                    Horaires
+                </button>
+                <button
+                    onClick={() => setActiveTab('menus')}
+                    style={{ padding: '0.8rem 1rem', background: 'none', border: 'none', color: activeTab === 'menus' ? 'var(--primary)' : 'var(--text-muted)', borderBottom: activeTab === 'menus' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap' }}
+                >
+                    Cartes & Menus
+                </button>
+                <button
+                    onClick={() => setActiveTab('photos')}
+                    style={{ padding: '0.8rem 1rem', background: 'none', border: 'none', color: activeTab === 'photos' ? 'var(--primary)' : 'var(--text-muted)', borderBottom: activeTab === 'photos' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap' }}
+                >
+                    Galerie Photos
                 </button>
             </div>
 
@@ -139,7 +164,7 @@ const RestaurateurDashboard = () => {
                         ))}
                     </div>
                 </>
-            ) : (
+            ) : activeTab === 'reservations' ? (
                 <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
                     <div style={{ overflowX: 'auto' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -157,10 +182,10 @@ const RestaurateurDashboard = () => {
                                 {reservations.map(res => (
                                     <tr key={res.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                                         <td style={{ padding: '1.2rem' }}>
-                                            <div style={{ fontWeight: '600' }}>{res.user.name} {res.user.last_name}</div>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{res.user.email}</div>
+                                            <div style={{ fontWeight: '600' }}>{res.user?.name} {res.user?.last_name}</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{res.user?.email}</div>
                                         </td>
-                                        <td style={{ padding: '1.2rem', fontWeight: '500' }}>{res.restaurant.name}</td>
+                                        <td style={{ padding: '1.2rem', fontWeight: '500' }}>{res.restaurant?.name}</td>
                                         <td style={{ padding: '1.2rem' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                                                 <Calendar size={14} className="text-primary" /> {new Date(res.reservation_date).toLocaleDateString()}
@@ -215,6 +240,12 @@ const RestaurateurDashboard = () => {
                             </tbody>
                         </table>
                     </div>
+                </div>
+            ) : (
+                <div className="card" style={{ padding: '3rem', textAlign: 'center' }}>
+                    <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏗️</div>
+                    <h2 style={{ marginBottom: '0.5rem' }}>Section en cours de finalisation</h2>
+                    <p style={{ color: 'var(--text-muted)' }}>L'interface de gestion des {activeTab} sera bientôt disponible.</p>
                 </div>
             )}
         </div>

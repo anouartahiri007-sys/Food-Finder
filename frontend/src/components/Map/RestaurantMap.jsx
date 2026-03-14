@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow, MarkerClusterer } from '@react-google-maps/api';
 import { Star, MapPin } from 'lucide-react';
 
 const containerStyle = {
@@ -8,7 +8,7 @@ const containerStyle = {
     borderRadius: 'inherit'
 };
 
-const RestaurantMap = ({ restaurants = [], center = { lat: 33.5731, lng: -7.5898 } }) => {
+const RestaurantMap = ({ restaurants = [], center = { lat: 33.5731, lng: -7.5898 }, onMarkerClick }) => {
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script',
         googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
@@ -16,6 +16,14 @@ const RestaurantMap = ({ restaurants = [], center = { lat: 33.5731, lng: -7.5898
 
     const [map, setMap] = useState(null);
     const [selectedRestaurant, setSelectedRestaurant] = useState(null);
+
+    const handleMarkerClick = (restaurant) => {
+        setSelectedRestaurant(restaurant);
+        if (onMarkerClick) onMarkerClick(restaurant.id);
+        if (map) {
+            map.panTo({ lat: parseFloat(restaurant.latitude), lng: parseFloat(restaurant.longitude) });
+        }
+    };
 
     const onLoad = useCallback(function callback(mapInstance) {
         setMap(mapInstance);
@@ -48,16 +56,8 @@ const RestaurantMap = ({ restaurants = [], center = { lat: 33.5731, lng: -7.5898
                     window.google.maps.event.removeListener(listener);
                 });
             }
-        } else if (center) {
-            map.setCenter(center);
-            map.setZoom(13);
         }
-    }, [restaurants, map, center]);
-
-    // Close info window when restaurants change
-    useEffect(() => {
-        setSelectedRestaurant(null);
-    }, [restaurants]);
+    }, [restaurants, map]);
 
     if (!isLoaded) {
         return (
@@ -73,15 +73,6 @@ const RestaurantMap = ({ restaurants = [], center = { lat: 33.5731, lng: -7.5898
 
     return (
         <div style={{ position: 'relative', height: '100%', width: '100%', borderRadius: 'inherit' }}>
-            {!import.meta.env.VITE_GOOGLE_MAPS_API_KEY && (
-                <div style={{
-                    position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)',
-                    zIndex: 1000, background: 'var(--danger)', color: 'white',
-                    padding: '0.5rem 1rem', borderRadius: 'var(--radius-md)', fontSize: '0.85rem',
-                }}>
-                    ⚠️ Clé API Google Maps manquante
-                </div>
-            )}
             <GoogleMap
                 mapContainerStyle={containerStyle}
                 center={center}
@@ -99,49 +90,63 @@ const RestaurantMap = ({ restaurants = [], center = { lat: 33.5731, lng: -7.5898
                     ],
                 }}
             >
-                {restaurants
-                    .filter(r => r.latitude && r.longitude)
-                    .map(restaurant => (
-                        <Marker
-                            key={restaurant.id}
-                            position={{ lat: parseFloat(restaurant.latitude), lng: parseFloat(restaurant.longitude) }}
-                            onClick={() => setSelectedRestaurant(restaurant)}
-                            icon={{
-                                url: 'https://maps.google.com/mapfiles/ms/icons/orange-dot.png',
-                            }}
-                        />
-                    ))}
+                <MarkerClusterer>
+                    {(clusterer) =>
+                        restaurants
+                            .filter(r => r.latitude && r.longitude)
+                            .map((restaurant) => (
+                                <Marker
+                                    key={restaurant.id}
+                                    position={{ lat: parseFloat(restaurant.latitude), lng: parseFloat(restaurant.longitude) }}
+                                    clusterer={clusterer}
+                                    onClick={() => handleMarkerClick(restaurant)}
+                                    icon={{
+                                        url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+                                        scaledSize: { width: 40, height: 40 }
+                                    }}
+                                />
+                            ))
+                    }
+                </MarkerClusterer>
 
                 {selectedRestaurant && (
                     <InfoWindow
                         position={{ lat: parseFloat(selectedRestaurant.latitude), lng: parseFloat(selectedRestaurant.longitude) }}
                         onCloseClick={() => setSelectedRestaurant(null)}
                     >
-                        <div style={{ padding: '0.25rem', maxWidth: '220px', fontFamily: 'system-ui, sans-serif' }}>
-                            {selectedRestaurant.photo_url && (
+                        <div style={{ padding: '0.25rem', maxWidth: '240px', fontFamily: 'var(--font-body)' }}>
+                            <div style={{ position: 'relative', marginBottom: '0.75rem' }}>
                                 <img
-                                    src={selectedRestaurant.photo_url}
+                                    src={selectedRestaurant.photo_url || `https://picsum.photos/seed/${selectedRestaurant.id}/400/300`}
                                     alt={selectedRestaurant.name}
-                                    style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: '6px', marginBottom: '0.5rem' }}
+                                    style={{ width: '100%', height: '110px', objectFit: 'cover', borderRadius: '8px' }}
                                 />
-                            )}
-                            <h3 style={{ margin: '0 0 0.25rem 0', color: '#1a1a1a', fontSize: '1rem', fontWeight: '700' }}>
+                                <div style={{
+                                    position: 'absolute', top: '0.5rem', right: '0.5rem',
+                                    background: 'rgba(0,0,0,0.7)', color: 'white', padding: '0.2rem 0.5rem',
+                                    borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: '700',
+                                    display: 'flex', alignItems: 'center', gap: '0.2rem'
+                                }}>
+                                    <Star size={12} fill="#fbbf24" color="#fbbf24" /> {selectedRestaurant.rating}
+                                </div>
+                            </div>
+                            <h3 style={{ margin: '0 0 0.25rem 0', color: 'var(--text-main)', fontSize: '1rem', fontWeight: '700' }}>
                                 {selectedRestaurant.name}
                             </h3>
-                            <p style={{ margin: '0 0 0.35rem 0', fontSize: '0.78rem', color: '#666', lineHeight: '1.3' }}>
-                                {selectedRestaurant.address}
+                            <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                <MapPin size={12} /> {selectedRestaurant.address}
                             </p>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem' }}>
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.15rem', fontWeight: '600', color: '#f59e0b' }}>
-                                    ★ {selectedRestaurant.rating}
-                                </span>
-                                <span style={{ color: '#999' }}>({selectedRestaurant.user_ratings} avis)</span>
-                                {selectedRestaurant.price_level && (
-                                    <span style={{ color: '#10b981', fontWeight: '600' }}>
-                                        {'€'.repeat(selectedRestaurant.price_level)}
-                                    </span>
-                                )}
-                            </div>
+                            <a 
+                                href={`/restaurants/${selectedRestaurant.id}`}
+                                style={{
+                                    display: 'block', textAlign: 'center', background: 'var(--primary)',
+                                    color: 'white', padding: '0.5rem', borderRadius: 'var(--radius-md)',
+                                    fontSize: '0.8rem', fontWeight: '600', textDecoration: 'none',
+                                    transition: 'var(--transition)'
+                                }}
+                            >
+                                Voir le restaurant
+                            </a>
                         </div>
                     </InfoWindow>
                 )}

@@ -20,7 +20,7 @@ const Profile = () => {
         const fetchData = async () => {
             try {
                 const [userRes, resRes] = await Promise.all([
-                    api.get('/user'),
+                    api.get('/profile'),
                     api.get('/reservations')
                 ]);
                 setUser(userRes.data);
@@ -28,10 +28,11 @@ const Profile = () => {
                 setFormData({
                     name: userRes.data.name || '',
                     last_name: userRes.data.last_name || '',
+                    phone: userRes.data.phone || '',
+                    date_of_birth: userRes.data.date_of_birth || '',
                     description: userRes.data.description || ''
                 });
 
-                // For mock, use a placeholder if no real photo logic is present
                 if (userRes.data.profile_photo) {
                     setPhotoPreview(userRes.data.profile_photo);
                 }
@@ -60,12 +61,14 @@ const Profile = () => {
             const data = new FormData();
             data.append('name', formData.name);
             data.append('last_name', formData.last_name);
+            data.append('phone', formData.phone);
+            data.append('date_of_birth', formData.date_of_birth);
             data.append('description', formData.description);
             if (photoFile) {
                 data.append('profile_photo', photoFile);
             }
 
-            const response = await api.post('/user/update', data, {
+            const response = await api.post('/profile/update', data, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
@@ -91,7 +94,7 @@ const Profile = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem' }}>
                             <div style={{ position: 'relative' }}>
                                 <img
-                                    src={photoPreview || 'https://via.placeholder.com/100'}
+                                    src={photoPreview || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=random&size=100`}
                                     alt="Profile"
                                     style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary)' }}
                                 />
@@ -126,6 +129,25 @@ const Profile = () => {
                                     className="input-base"
                                     value={formData.last_name}
                                     onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Téléphone</label>
+                                <input
+                                    type="text"
+                                    className="input-base"
+                                    value={formData.phone}
+                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                    placeholder="+212 ..."
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Date de naissance</label>
+                                <input
+                                    type="date"
+                                    className="input-base"
+                                    value={formData.date_of_birth}
+                                    onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
                                 />
                             </div>
                             <div className="form-group full-width">

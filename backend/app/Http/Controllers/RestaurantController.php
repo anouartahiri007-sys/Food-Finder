@@ -192,4 +192,20 @@ class RestaurantController extends Controller
         $restaurants = $request->user()->restaurants;
         return response()->json($restaurants);
     }
+
+    /**
+     * Get statistics for the owner's restaurants.
+     */
+    public function stats(Request $request)
+    {
+        $user = $request->user();
+        $restaurantIds = $user->restaurants()->pluck('id');
+
+        return response()->json([
+            'restaurants_count' => $restaurantIds->count(),
+            'total_reviews' => \App\Models\Review::whereIn('restaurant_id', $restaurantIds)->count(),
+            'average_rating' => $user->restaurants()->avg('rating') ?: 0,
+            'total_reservations' => \App\Models\Reservation::whereIn('restaurant_id', $restaurantIds)->count(),
+        ]);
+    }
 }

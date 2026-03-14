@@ -104,12 +104,47 @@ const RestaurantDetail = () => {
                         </div>
 
                         <div className="card map-preview">
-                            <h3>Localisation</h3>
-                            <div className="mini-map">
-                                {/* Map integration would go here */}
-                                <p>Carte interactive coming soon...</p>
+                            <h3>Horaires d'ouverture</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                {restaurant.working_hours?.length > 0 ? (
+                                    restaurant.working_hours.map(wh => (
+                                        <div key={wh.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                                            <span style={{ textTransform: 'capitalize' }}>{wh.day}</span>
+                                            <span>{wh.is_closed ? 'Fermé' : `${wh.open_time} - ${wh.close_time}`}</span>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Non renseignés.</p>
+                                )}
                             </div>
                         </div>
+
+                        <section style={{ marginTop: '2rem' }}>
+                            <h3>Avis des clients</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+                                {restaurant.reviews?.length > 0 ? (
+                                    restaurant.reviews.map(review => (
+                                        <div key={review.id} className="card" style={{ padding: '1rem', position: 'relative' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <strong>{review.user?.name || 'Anonyme'}</strong>
+                                                <div style={{ color: '#f59e0b', fontSize: '0.9rem' }}>
+                                                    {Array(review.rating).fill('★').join('')}
+                                                </div>
+                                            </div>
+                                            <p style={{ margin: '0.5rem 0', fontSize: '0.9rem' }}>{review.comment}</p>
+                                            <button 
+                                                style={{ background: 'none', border: 'none', color: 'var(--danger)', fontSize: '0.75rem', cursor: 'pointer', padding: '0', textAlign: 'left' }}
+                                                onClick={() => toast.info('Avis signalé ! Merci pour votre vigilance.')}
+                                            >
+                                                Signaler cet avis
+                                            </button>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p style={{ color: 'var(--text-muted)' }}>Aucun avis pour le moment. Soyez le premier !</p>
+                                )}
+                            </div>
+                        </section>
                     </div>
                 </div>
             </div>

@@ -1,0 +1,40 @@
+{
+  "common": {
+    "search_placeholder": "Search for a restaurant, cuisine...",
+    "clear": "Clear",
+    "filters": "Filters",
+    "cuisine_type": "Cuisine Type",
+    "min_rating": "Min Rating",
+    "price": "Price",
+    "open_now": "Open Now",
+    "results_found": "{{count}} restaurant found",
+    "results_found_plural": "{{count}} restaurants found",
+    "loading": "Loading...",
+    "view_details": "Details",
+    "voir_le_restaurant": "View Restaurant",
+    "popular_restaurants": "Popular Restaurants",
+    "popular_description": "Highest rated establishments",
+    "recommendations": "Recommended for you",
+    "recommendations_description": "Based on your preferences",
+    "all_restaurants": "All Restaurants",
+    "load_more": "Load More",
+    "no_restaurant_found": "No restaurant found",
+    "no_restaurant_desc": "Try adjusting your search criteria or exploring another area on the map."
+  },
+  "cuisines": {
+    "french": "French",
+    "moroccan": "Moroccan",
+    "italian": "Italian",
+    "japanese": "Japanese",
+    "american": "American",
+    "european": "European"
+  },
+  "nav": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout"
+  }
+}

@@ -1,0 +1,52 @@
+
+  Dropping all tables  32.19ms DONE
+
+   INFO  Preparing database.  
+
+  Creating migration table  29.23ms DONE
+
+   INFO  Running migrations.  
+
+  0001_01_01_000000_create_users_table  179.34ms DONE
+  0001_01_01_000001_create_cache_table  128.08ms DONE
+  0001_01_01_000002_create_jobs_table  80.44ms DONE
+  2026_02_27_124144_create_restaurants_table  26.32ms DONE
+  2026_02_27_124144_create_reviews_table  28.21ms DONE
+  2026_02_27_124145_create_favorites_table  31.02ms DONE
+  2026_02_27_124145_create_menu_items_table  17.10ms DONE
+  2026_02_27_124218_create_personal_access_tokens_table  61.33ms DONE
+  2026_03_06_000000_create_reservations_table  16.22ms DONE
+  2026_03_06_195850_add_image_url_to_restaurants_table  16.66ms DONE
+  2026_03_13_000001_create_categories_and_pivot_table  31.56ms DONE
+  2026_03_13_000002_create_working_hours_table  16.07ms DONE
+  2026_03_13_000003_create_menus_and_update_items_table  126.69ms DONE
+  2026_03_13_000004_create_photos_table  16.21ms DONE
+  2026_03_13_000005_create_reports_table  17.87ms DONE
+  2026_03_13_000006_create_recommendations_table  15.59ms DONE
+  2026_03_13_000007_update_users_and_restaurants_schema  149.79ms DONE
+
+
+   INFO  Seeding database.  
+
+
+   Illuminate\Database\QueryException 
+
+  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: role (Connection: sqlite, Database: C:\Users\Dell\Desktop\projet de sintese\food-finder\backend\database\database.sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "role", "updated_at", "created_at") values (Test User, test@example.com, 2026-03-13 18:23:34, $2y$12$Vbmsc4ft4UNYPpzy0EbTv.KS5wdiNu.SIX/aZVBXql0Pz51NWMLsm, PJDdowvgUR, customer, 2026-03-13 18:23:35, 2026-03-13 18:23:35))
+
+  at vendor\laravel\framework\src\Illuminate\Database\Connection.php:838
+    834Γûò             $exceptionType = $this->isUniqueConstraintError($e)
+    835Γûò                 ? UniqueConstraintViolationException::class
+    836Γûò                 : QueryException::class;
+    837Γûò 
+  Γ₧£ 838Γûò             throw new $exceptionType(
+    839Γûò                 $this->getNameWithReadWriteType(),
+    840Γûò                 $query,
+    841Γûò                 $this->prepareBindings($bindings),
+    842Γûò                 $e,
+
+  1   vendor\laravel\framework\src\Illuminate\Database\Connection.php:584
+      PDOException::("SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: role")
+
+  2   vendor\laravel\framework\src\Illuminate\Database\Connection.php:584
+      PDOStatement::execute()
+

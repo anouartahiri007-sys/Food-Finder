@@ -27,4 +27,14 @@ class MenuItem extends Model
     {
         return $this->belongsTo(Restaurant::class);
     }
+
+    public function menu()
+    {
+        return $this->belongsTo(Menu::class);
+    }
+
+    public function photos()
+    {
+        return $this->hasMany(Photo::class);
+    }
 }

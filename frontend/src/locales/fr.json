@@ -1,0 +1,40 @@
+{
+  "common": {
+    "search_placeholder": "Rechercher un restaurant, une cuisine...",
+    "clear": "Effacer",
+    "filters": "Filtres",
+    "cuisine_type": "Type de cuisine",
+    "min_rating": "Note minimale",
+    "price": "Prix",
+    "open_now": "Ouvert maintenant",
+    "results_found": "{{count}} restaurant trouvé",
+    "results_found_plural": "{{count}} restaurants trouvés",
+    "loading": "Chargement...",
+    "view_details": "Détails",
+    "voir_le_restaurant": "Voir le restaurant",
+    "popular_restaurants": "Restaurants populaires",
+    "popular_description": "Les établissements les mieux notés",
+    "recommendations": "Recommandations pour vous",
+    "recommendations_description": "Selon vos préférences",
+    "all_restaurants": "Tous les restaurants",
+    "load_more": "Charger plus",
+    "no_restaurant_found": "Aucun restaurant trouvé",
+    "no_restaurant_desc": "Essayez de modifier vos critères de recherche ou d'explorer une autre zone sur la carte."
+  },
+  "cuisines": {
+    "french": "Française",
+    "moroccan": "Marocaine",
+    "italian": "Italienne",
+    "japanese": "Japonaise",
+    "american": "Américaine",
+    "european": "Européenne"
+  },
+  "nav": {
+    "home": "Accueil",
+    "dashboard": "Tableau de bord",
+    "profile": "Profil",
+    "login": "Connexion",
+    "register": "Inscription",
+    "logout": "Déconnexion"
+  }
+}

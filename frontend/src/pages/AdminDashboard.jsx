@@ -15,7 +15,7 @@ const AdminDashboard = () => {
     useEffect(() => {
         const fetchAdminData = async () => {
             try {
-                const userRes = await api.get('/user');
+                const userRes = await api.get('/profile');
                 if (userRes.data.role !== 'admin') {
                     navigate('/');
                     return;
@@ -116,6 +116,11 @@ const AdminDashboard = () => {
                     style={{ padding: '1rem', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '700', color: activeTab === 'restaurants' ? 'var(--danger)' : 'var(--text-muted)', borderBottom: activeTab === 'restaurants' ? '3px solid var(--danger)' : 'none' }}>
                     Audit des Restaurants
                 </button>
+                <button
+                    onClick={() => setActiveTab('reports')}
+                    style={{ padding: '1rem', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '700', color: activeTab === 'reports' ? 'var(--danger)' : 'var(--text-muted)', borderBottom: activeTab === 'reports' ? '3px solid var(--danger)' : 'none' }}>
+                    Signalements Avis
+                </button>
             </div>
 
             {/* Content Table */}
@@ -148,11 +153,11 @@ const AdminDashboard = () => {
                                         <td style={{ padding: '1.2rem' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                                 <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700' }}>
-                                                    {client.name[0]}{client.last_name[0]}
+                                                    {client.name?.[0]}{client.last_name?.[0]}
                                                 </div>
                                                 <div>
                                                     <div style={{ fontWeight: '700' }}>{client.name} {client.last_name}</div>
-                                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{client.gender} • {new Date().getFullYear() - new Date(client.dob).getFullYear()} ans</div>
+                                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{client.role}</div>
                                                 </div>
                                             </div>
                                         </td>
@@ -160,16 +165,15 @@ const AdminDashboard = () => {
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '500' }}>
                                                 <Mail size={14} /> {client.email}
                                             </div>
-                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>Pass: {client.password}</div>
                                         </td>
-                                        <td style={{ padding: '1.2rem' }}>{client.login_time}</td>
-                                        <td style={{ padding: '1.2rem' }}>{client.logout_time}</td>
+                                        <td style={{ padding: '1.2rem' }}>{client.created_at ? new Date(client.created_at).toLocaleDateString() : '-'}</td>
+                                        <td style={{ padding: '1.2rem' }}>{client.email_verified_at ? 'Vérifié' : 'Non vérifié'}</td>
                                         <td style={{ padding: '1.2rem' }}>
-                                            <button className="btn btn-secondary" style={{ color: 'var(--danger)', padding: '0.5rem' }}><Trash2 size={18} /></button>
+                                            <button className="btn btn-secondary" style={{ color: 'var(--danger)', padding: '0.5rem' }} onClick={() => toast.info('Action restreinte')}><Trash2 size={18} /></button>
                                         </td>
                                     </tr>
                                 ))
-                            ) : (
+                            ) : activeTab === 'restaurants' ? (
                                 filteredRestaurants.map(res => (
                                     <tr key={res.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                                         <td style={{ padding: '1.2rem' }}>
@@ -192,10 +196,18 @@ const AdminDashboard = () => {
                                             </a>
                                         </td>
                                         <td style={{ padding: '1.2rem' }}>
-                                            <button className="btn btn-secondary" style={{ color: 'var(--danger)', padding: '0.5rem' }}><Trash2 size={18} /></button>
+                                            <button className="btn btn-secondary" style={{ color: 'var(--danger)', padding: '0.5rem' }} onClick={() => toast.info('Action restreinte')}><Trash2 size={18} /></button>
                                         </td>
                                     </tr>
                                 ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="5" style={{ padding: '4rem', textAlign: 'center' }}>
+                                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🚩</div>
+                                        <h3 style={{ marginBottom: '0.5rem' }}>Gestion des Signalements</h3>
+                                        <p style={{ color: 'var(--text-muted)' }}>La liste des avis signalés sera affichée ici après validation.</p>
+                                    </td>
+                                </tr>
                             )}
                         </tbody>
                     </table>

@@ -13,13 +13,10 @@ class AuthController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
+            'last_name' => 'nullable|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'date_of_birth' => 'required|date|before:today',
-            'role' => 'required|in:customer,owner',
-            'accepted_privacy_policy' => 'required',
-            'is_over_18' => 'required',
+            'role' => 'sometimes|string|in:user,restaurateur',
         ]);
 
         $verificationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
@@ -29,10 +26,7 @@ class AuthController extends Controller
             'last_name' => $request->last_name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'date_of_birth' => $request->date_of_birth,
-            'role' => $request->role,
-            'accepted_privacy_policy' => true,
-            'is_over_18' => true,
+            'role' => $request->role ?? 'user',
             'verification_code' => $verificationCode,
         ]);
 

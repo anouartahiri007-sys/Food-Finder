@@ -29,6 +29,9 @@ class User extends Authenticatable
         'accepted_privacy_policy',
         'is_over_18',
         'verification_code',
+        'phone',
+        'social_login_provider',
+        'social_login_id',
         'email_verified_at',
     ];
 
@@ -59,6 +62,16 @@ class User extends Authenticatable
         ];
     }
 
+    public function reports()
+    {
+        return $this->hasMany(Report::class);
+    }
+
+    public function recommendations()
+    {
+        return $this->hasMany(Recommendation::class);
+    }
+
     public function restaurants()
     {
         return $this->hasMany(Restaurant::class);
@@ -67,6 +80,11 @@ class User extends Authenticatable
     public function reviews()
     {
         return $this->hasMany(Review::class);
+    }
+
+    public function reservations()
+    {
+        return $this->hasMany(Reservation::class);
     }
 
     public function favorites()

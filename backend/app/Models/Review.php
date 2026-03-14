@@ -30,4 +30,14 @@ class Review extends Model
     {
         return $this->belongsTo(Restaurant::class);
     }
+
+    public function reports()
+    {
+        return $this->hasMany(Report::class);
+    }
+
+    public function photos()
+    {
+        return $this->hasMany(Photo::class);
+    }
 }

@@ -21,6 +21,7 @@ class Restaurant extends Model
         'website',
         'rating',
         'image_url',
+        'average_price',
     ];
 
     protected function casts(): array
@@ -41,6 +42,31 @@ class Restaurant extends Model
     public function reviews()
     {
         return $this->hasMany(Review::class);
+    }
+
+    public function workingHours()
+    {
+        return $this->hasMany(WorkingHour::class);
+    }
+
+    public function photos()
+    {
+        return $this->hasMany(Photo::class);
+    }
+
+    public function categories()
+    {
+        return $this->belongsToMany(Category::class);
+    }
+
+    public function menus()
+    {
+        return $this->hasMany(Menu::class);
+    }
+
+    public function recommendations()
+    {
+        return $this->hasMany(Recommendation::class);
     }
 
     public function menuItems()

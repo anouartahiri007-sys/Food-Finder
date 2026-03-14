@@ -10,7 +10,7 @@ class RestaurantSeeder extends Seeder
 {
     public function run(): void
     {
-        $owner = User::where('role', 'owner')->first() ?: User::factory()->create(['role' => 'owner', 'name' => 'John Owner', 'email' => 'owner@example.com']);
+        $owner = User::where('role', 'restaurateur')->first() ?: User::factory()->create(['role' => 'restaurateur', 'name' => 'John Owner', 'email' => 'owner@example.com']);
 
         $restaurants = [
             [

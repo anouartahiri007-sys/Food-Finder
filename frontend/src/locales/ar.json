@@ -1,0 +1,40 @@
+{
+  "common": {
+    "search_placeholder": "ابحث عن مطعم، نوع مطبخ...",
+    "clear": "مسح",
+    "filters": "الفلاتر",
+    "cuisine_type": "نوع المطبخ",
+    "min_rating": "التقييم الأدنى",
+    "price": "السعر",
+    "open_now": "مفتوح الآن",
+    "results_found": "تم العثور على مطعم {{count}} ",
+    "results_found_plural": "تم العثور على {{count}} مطاعم",
+    "loading": "جاري التحميل...",
+    "view_details": "التفاصيل",
+    "voir_le_restaurant": "مشاهدة المطعم",
+    "popular_restaurants": "مطاعم شعبية",
+    "popular_description": "المنشآت الأعلى تقييماً",
+    "recommendations": "توصيات لك",
+    "recommendations_description": "بناءً على تفضيلاتك",
+    "all_restaurants": "كل المطاعم",
+    "load_more": "تحميل المزيد",
+    "no_restaurant_found": "لم يتم العثور على مطاعم",
+    "no_restaurant_desc": "حاول تعديل معايير البحث أو استكشاف منطقة أخرى على الخريطة."
+  },
+  "cuisines": {
+    "french": "فرنسي",
+    "moroccan": "مغربي",
+    "italian": "إيطالي",
+    "japanese": "ياباني",
+    "american": "أيريكي",
+    "european": "أوروبي"
+  },
+  "nav": {
+    "home": "الرئيسية",
+    "dashboard": "لوحة التحكم",
+    "profile": "الملف الشخصي",
+    "login": "تسجيل الدخول",
+    "register": "إنشاء حساب",
+    "logout": "تسجيل الخروج"
+  }
+}
