@@ -33,6 +33,8 @@ class User extends Authenticatable
         'social_login_provider',
         'social_login_id',
         'email_verified_at',
+        'gender',
+        'website',
     ];
 
     /**

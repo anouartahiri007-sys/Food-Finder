@@ -16,18 +16,37 @@ class AuthController extends Controller
             'last_name' => 'nullable|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'sometimes|string|in:user,restaurateur',
+            'role' => 'sometimes|string|in:customer,owner',
+            'phone' => 'nullable|string|max:20',
+            'website' => 'nullable|url|max:255',
+            'gender' => 'nullable|string|in:Male,Female',
+            'date_of_birth' => 'nullable|date',
+            'accepted_privacy_policy' => 'required|string|in:1,0,true,false,yes,no',
         ]);
 
         $verificationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+        $isOver18 = false;
+        if ($request->date_of_birth) {
+            $dob = new \DateTime($request->date_of_birth);
+            $now = new \DateTime();
+            $age = $now->diff($dob)->y;
+            $isOver18 = $age >= 18;
+        }
 
         $user = User::create([
             'name' => $request->name,
             'last_name' => $request->last_name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => $request->role ?? 'user',
+            'role' => $request->role ?? 'customer',
             'verification_code' => $verificationCode,
+            'phone' => $request->phone,
+            'website' => $request->website,
+            'gender' => $request->gender,
+            'date_of_birth' => $request->date_of_birth,
+            'accepted_privacy_policy' => in_array($request->accepted_privacy_policy, ['1', 'true', 'yes']),
+            'is_over_18' => $isOver18,
         ]);
 
         try {

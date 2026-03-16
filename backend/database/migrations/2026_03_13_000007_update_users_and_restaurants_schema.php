@@ -24,7 +24,7 @@ return new class extends Migration {
             }
             
             // Adjust role column to include admin if not already there or to match plan
-            $table->enum('role_new', ['user', 'restaurateur', 'admin'])->default('user')->after('role');
+            $table->enum('role_new', ['customer', 'owner', 'admin'])->default('customer')->after('role');
         });
 
         // Migrate roles (simple mapping)

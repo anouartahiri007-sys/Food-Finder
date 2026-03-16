@@ -1,39 +1,67 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Utensils, MapPin, Phone, Globe, Clock, DollarSign, Image as ImageIcon, Save, ArrowLeft } from 'lucide-react';
-import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom'; 
+import { Utensils, MapPin, Phone, Globe, Clock, DollarSign, Image as ImageIcon, Save, ArrowLeft, Coffee, X, Plus } from 'lucide-react'; 
+import { toast } from 'react-toastify'; 
 import api from '../api/axios';
-
 
 const AddRestaurant = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
-    const [preview, setPreview] = useState(null);
+    const [previews, setPreviews] = useState([]);
     const [formData, setFormData] = useState({
         name: '',
         description: '',
         address: '',
         cuisine_type: '',
-        price_range: '$$',
+        price_range: '$',
         opening_time: '09:00',
         closing_time: '22:00',
         phone: '',
         website: '',
         dietary_options: [],
     });
-    const [image, setImage] = useState(null);
+    const [images, setImages] = useState([]);
+
+    // Dietary options available
+    const dietaryOptionsList = [
+        'Végétarien', 'Vegan', 'Sans Gluten', 'Halal', 'Casher', 'Bio', 'Sans Lactose'
+    ];
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleDietaryToggle = (option) => {
+        setFormData(prev => ({
+            ...prev,
+            dietary_options: prev.dietary_options.includes(option)
+                ? prev.dietary_options.filter(item => item !== option)
+                : [...prev.dietary_options, option]
+        }));
+    };
+
     const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setImage(file);
-            setPreview(URL.createObjectURL(file));
+        const files = Array.from(e.target.files);
+        if (files.length > 0) {
+            // Add new files to existing ones
+            const newImages = [...images, ...files];
+            setImages(newImages);
+            
+            // Generate previews for new files
+            const newPreviews = files.map(file => ({
+                file,
+                url: URL.createObjectURL(file)
+            }));
+            setPreviews([...previews, ...newPreviews]);
         }
+    };
+
+    const removeImage = (index) => {
+        const newImages = images.filter((_, i) => i !== index);
+        const newPreviews = previews.filter((_, i) => i !== index);
+        setImages(newImages);
+        setPreviews(newPreviews);
     };
 
     const handleSubmit = async (e) => {
@@ -48,7 +76,10 @@ const AddRestaurant = () => {
                 data.append(key, formData[key]);
             }
         });
-        if (image) data.append('image', image);
+        // Append multiple images
+        images.forEach((img, index) => {
+            data.append(`images[${index}]`, img);
+        });
 
         try {
             await api.post('/restaurants', data, {
@@ -129,18 +160,106 @@ const AddRestaurant = () => {
                         <input type="url" name="website" className="input-base" value={formData.website} onChange={handleChange} placeholder="https://www.exemple.com" />
                     </div>
 
+                    {/* Dietary Options */}
                     <div className="form-group full-width">
-                        <label><ImageIcon size={18} /> Photo de l'établissement</label>
-                        <div style={{ border: '2px dashed var(--border-color)', borderRadius: 'var(--radius-md)', padding: '2rem', textAlign: 'center', cursor: 'pointer', transition: 'var(--transition)' }} onClick={() => document.getElementById('image-upload').click()}>
-                            {preview ? (
-                                <img src={preview} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: 'var(--radius-md)', objectFit: 'cover' }} />
-                            ) : (
-                                <div>
-                                    <ImageIcon size={40} style={{ color: 'var(--text-muted)', marginBottom: '1rem', opacity: 0.5 }} />
-                                    <p style={{ color: 'var(--text-muted)' }}>Cliquez pour ajouter une photo</p>
+                        <label><Coffee size={18} /> Options alimentaires</label>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+                            {dietaryOptionsList.map(option => (
+                                <button
+                                    key={option}
+                                    type="button"
+                                    onClick={() => handleDietaryToggle(option)}
+                                    style={{
+                                        padding: '0.5rem 1rem',
+                                        borderRadius: 'var(--radius-full)',
+                                        border: formData.dietary_options.includes(option) ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                                        background: formData.dietary_options.includes(option) ? 'var(--primary)' : 'transparent',
+                                        color: formData.dietary_options.includes(option) ? 'white' : 'var(--text-main)',
+                                        cursor: 'pointer',
+                                        fontSize: '0.9rem',
+                                        transition: 'var(--transition)'
+                                    }}
+                                >
+                                    {option}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="form-group full-width">
+                        <label><ImageIcon size={18} /> Photos de l'établissement</label>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
+                            Vous pouvez ajouter plusieurs photos pour votre établissement
+                        </p>
+                        <div style={{ border: '2px dashed var(--border-color)', borderRadius: 'var(--radius-md)', padding: '1.5rem' }}>
+                            {/* Preview Grid */}
+                            {previews.length > 0 && (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+                                    {previews.map((preview, index) => (
+                                        <div key={index} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', aspectRatio: '1' }}>
+                                            <img 
+                                                src={preview.url} 
+                                                alt={`Preview ${index + 1}`} 
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => removeImage(index)}
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: '4px',
+                                                    right: '4px',
+                                                    background: 'rgba(0,0,0,0.7)',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    borderRadius: '50%',
+                                                    width: '24px',
+                                                    height: '24px',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
-                            <input id="image-upload" type="file" hidden accept="image/*" onChange={handleImageChange} />
+                            
+                            {/* Upload Button */}
+                            <label 
+                                htmlFor="multiple-image-upload"
+                                style={{ 
+                                    display: 'flex', 
+                                    flexDirection: 'column',
+                                    alignItems: 'center', 
+                                    gap: '0.5rem',
+                                    cursor: 'pointer', 
+                                    padding: '1.5rem',
+                                    border: '2px dashed var(--border-color)',
+                                    borderRadius: 'var(--radius-md)',
+                                    transition: 'var(--transition)',
+                                    background: 'var(--bg-secondary)'
+                                }}
+                            >
+                                <Plus size={32} style={{ color: 'var(--text-muted)' }} />
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                                    Ajouter des photos
+                                </span>
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                                    PNG, JPG jusqu'à 5MB
+                                </span>
+                                <input 
+                                    id="multiple-image-upload" 
+                                    type="file" 
+                                    multiple 
+                                    accept="image/*" 
+                                    onChange={handleImageChange} 
+                                    hidden 
+                                />
+                            </label>
                         </div>
                     </div>
 
@@ -150,7 +269,7 @@ const AddRestaurant = () => {
                 </form>
             </div>
         </div>
-    );
-};
-
+    ); 
+}; 
+ 
 export default AddRestaurant;

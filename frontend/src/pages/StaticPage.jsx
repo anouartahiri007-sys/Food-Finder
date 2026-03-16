@@ -27,9 +27,9 @@ const StaticPage = () => {
             title: 'Confidentialité',
             content: "Votre vie privée est notre priorité. Nous utilisons vos données uniquement pour améliorer votre expérience de recherche et de réservation."
         },
-        'rgpd': {
-            title: 'RGPD',
-            content: "Conformément au Règlement Général sur la Protection des Données (RGPD), vous disposez d'un droit d'accès, de rectification et de suppression de vos données personnelles."
+        'cookies': {
+            title: 'Cookies',
+            content: "Cette page décrit les cookies utilisés par Food Finder pour améliorer votre expérience. Les cookies sont de petits fichiers texte stockés sur votre appareil pour analyser le trafic et personnaliser le contenu."
         }
     };
 

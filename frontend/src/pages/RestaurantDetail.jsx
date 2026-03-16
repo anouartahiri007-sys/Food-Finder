@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MapPin, Clock, Phone, Globe, Star, Utensils, ArrowLeft } from 'lucide-react';
+import { MapPin, Clock, Phone, Globe, Star, Utensils, ArrowLeft, Send } from 'lucide-react';
+import { toast } from 'react-toastify'; // <-- ADD THIS IMPORT
 import api from '../api/axios';
 import ReservationModal from '../components/Reservations/ReservationModal';
 
@@ -11,6 +12,9 @@ const RestaurantDetail = () => {
     const [error, setError] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [reservationSuccess, setReservationSuccess] = useState(false);
+    const [showReviewForm, setShowReviewForm] = useState(false);
+    const [reviewData, setReviewData] = useState({ rating: 5, comment: '' });
+    const [submittingReview, setSubmittingReview] = useState(false);
 
     useEffect(() => {
         const fetchRestaurant = async () => {
@@ -19,12 +23,39 @@ const RestaurantDetail = () => {
                 setRestaurant(response.data);
             } catch (err) {
                 setError('Impossible de charger les détails du restaurant.');
+                toast.error('Erreur de chargement'); // Add toast error
             } finally {
                 setLoading(false);
             }
         };
         fetchRestaurant();
     }, [id]);
+
+    const handleSubmitReview = async (e) => {
+        e.preventDefault();
+        setSubmittingReview(true);
+        
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                toast.error('Veuillez vous connecter pour laisser un avis');
+                setSubmittingReview(false);
+                return;
+            }
+            
+            await api.post(`/restaurants/${id}/reviews`, reviewData);
+            toast.success('Avis ajouté avec succès !');
+            setShowReviewForm(false);
+            setReviewData({ rating: 5, comment: '' });
+            // Refresh restaurant data
+            const response = await api.get(`/restaurants/${id}`);
+            setRestaurant(response.data);
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Erreur lors de la soumission de l\'avis');
+        } finally {
+            setSubmittingReview(false);
+        }
+    };
 
     if (loading) return <div className="loader-container"><div className="loader"></div></div>;
     if (error) return <div className="alert alert-danger">{error}</div>;
@@ -120,7 +151,67 @@ const RestaurantDetail = () => {
                         </div>
 
                         <section style={{ marginTop: '2rem' }}>
-                            <h3>Avis des clients</h3>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                <h3>Avis des clients</h3>
+                                <button 
+                                    onClick={() => setShowReviewForm(!showReviewForm)}
+                                    className="btn btn-secondary"
+                                    style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+                                >
+                                    <Star size={16} style={{ marginRight: '0.3rem' }} />
+                                    {showReviewForm ? 'Annuler' : 'Laisser un avis'}
+                                </button>
+                            </div>
+
+                            {/* Review Form */}
+                            {showReviewForm && (
+                                <form onSubmit={handleSubmitReview} className="card" style={{ padding: '1.25rem', marginBottom: '1.5rem', border: '2px solid var(--primary)' }}>
+                                    <h4 style={{ marginBottom: '1rem' }}>Votre avis</h4>
+                                    
+                                    <div style={{ marginBottom: '1rem' }}>
+                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Note</label>
+                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                            {[1, 2, 3, 4, 5].map(star => (
+                                                <button
+                                                    key={star}
+                                                    type="button"
+                                                    onClick={() => setReviewData({ ...reviewData, rating: star })}
+                                                    style={{ 
+                                                        background: 'none', 
+                                                        border: 'none', 
+                                                        cursor: 'pointer',
+                                                        padding: '0.25rem'
+                                                    }}
+                                                >
+                                                    <Star 
+                                                        size={28} 
+                                                        fill={star <= reviewData.rating ? '#f59e0b' : 'none'}
+                                                        color={star <= reviewData.rating ? '#f59e0b' : '#d1d5db'}
+                                                    />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    
+                                    <div style={{ marginBottom: '1rem' }}>
+                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Commentaire</label>
+                                        <textarea
+                                            value={reviewData.comment}
+                                            onChange={(e) => setReviewData({ ...reviewData, comment: e.target.value })}
+                                            className="input-base"
+                                            rows="4"
+                                            placeholder="Partagez votre expérience..."
+                                            required
+                                        />
+                                    </div>
+                                    
+                                    <button type="submit" className="btn btn-primary" disabled={submittingReview}>
+                                        <Send size={16} style={{ marginRight: '0.5rem' }} />
+                                        {submittingReview ? 'Envoi...' : 'Soumettre mon avis'}
+                                    </button>
+                                </form>
+                            )}
+
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
                                 {restaurant.reviews?.length > 0 ? (
                                     restaurant.reviews.map(review => (

@@ -17,7 +17,7 @@ const AdminLogin = () => {
         try {
             const response = await api.post('/login', { email, password });
             if (response.data.user.role === 'admin') {
-                localStorage.setItem('token', response.data.token);
+                localStorage.setItem('token', response.data.access_token);
                 toast.success("Bienvenue dans l'espace Administration.");
                 // Force reload to update App state
                 window.location.href = '/admin/dashboard';
@@ -53,7 +53,7 @@ const AdminLogin = () => {
                                 className="input-base"
                                 required
                                 style={{ paddingLeft: '40px' }}
-                                placeholder="admin@foodfinder.com"
+                                placeholder="admin@foodfinder.ma"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                             />

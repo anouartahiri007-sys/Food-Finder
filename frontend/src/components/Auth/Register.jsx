@@ -27,7 +27,17 @@ const Register = () => {
         setLoading(true);
 
         // 18+ Verification
+        if (!formData.date_of_birth) {
+            toast.error('La date de naissance est requise.');
+            setLoading(false);
+            return;
+        }
         const birthDate = new Date(formData.date_of_birth);
+        if (isNaN(birthDate.getTime())) {
+            toast.error('Date de naissance invalide.');
+            setLoading(false);
+            return;
+        }
         const today = new Date();
         let age = today.getFullYear() - birthDate.getFullYear();
         const m = today.getMonth() - birthDate.getMonth();
@@ -50,7 +60,12 @@ const Register = () => {
         try {
             const data = new FormData();
             Object.keys(formData).forEach(key => {
-                data.append(key, formData[key]);
+                // Convert boolean to string for FormData compatibility
+                if (typeof formData[key] === 'boolean') {
+                    data.append(key, formData[key] ? '1' : '0');
+                } else {
+                    data.append(key, formData[key]);
+                }
             });
             if (profilePhoto) {
                 data.append('profile_photo', profilePhoto);

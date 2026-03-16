@@ -18,6 +18,9 @@ import StaticPage from './pages/StaticPage';
 import NotFound from './pages/NotFound';
 import AdminLogin from './components/Auth/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import MenuPage from './pages/MenuPage';
+import RestaurantProfile from './pages/RestaurantProfile';
+import Footer from './components/Footer';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
@@ -148,9 +151,10 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/restaurants/:id" element={<RestaurantDetail />} />
+            <Route path="/restaurants/:id/menu" element={<MenuPage />} />
             <Route path="/dashboard" element={user?.role === 'owner' ? <RestaurateurDashboard /> : <Home />} />
-            <Route path="/admin/dashboard" element={user?.role === 'admin' ? <AdminDashboard /> : <Home />} />
-            <Route path="/profile" element={<Profile />} />
+            <Route path="/admin/dashboard" element={user?.role === 'admin' ? <AdminDashboard /> : <AdminLogin />} />
+            <Route path="/profile" element={user?.role === 'owner' ? <RestaurantProfile /> : <Profile />} />
             <Route path="/add-restaurant" element={user?.role === 'owner' ? <AddRestaurant /> : <Home />} />
             <Route path="/restaurants/:id/edit" element={<EditRestaurant />} />
 
@@ -161,59 +165,18 @@ function App() {
             <Route path="/terms" element={<StaticPage />} />
             <Route path="/privacy" element={<StaticPage />} />
             <Route path="/rgpd" element={<StaticPage />} />
+            <Route path="/cookies" element={<StaticPage />} />
 
             {/* Catch-all Route for 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
 
-        <footer className="footer-saas">
-          <div className="footer-content">
-
-            {/* Brand section */}
-            <div className="footer-brand-section">
-              <h3 className="footer-logo">Food Finder</h3>
-              <p>
-                Découvrez les meilleurs restaurants adaptés à vos préférences alimentaires.
-              </p>
-            </div>
-
-            {/* Links */}
-            <div className="footer-links-grid">
-
-              <div className="footer-column">
-                <h4>Liens rapides</h4>
-                <Link to="/about">À propos</Link>
-                <Link to="/contact">Contact</Link>
-                <Link to="/help">Aide</Link>
-                <Link to="/admin/login" style={{ opacity: 0.6, fontSize: '0.8rem' }}>Accès Admin</Link>
-              </div>
-
-              {user?.role === 'owner' && (
-                <div className="footer-column">
-                  <h4>Restaurateurs</h4>
-                  <Link to="/add-restaurant">Ajouter un restaurant</Link>
-                  <Link to="/dashboard">Tableau de bord</Link>
-                </div>
-              )}
-
-              <div className="footer-column">
-                <h4>Légal</h4>
-                <Link to="/terms">Conditions d'utilisation</Link>
-                <Link to="/privacy">Confidentialité</Link>
-                <Link to="/rgpd">RGPD</Link>
-              </div>
-
-            </div>
-          </div>
-
-          <div className="footer-bottom">
-            <p>© {new Date().getFullYear()} Food Finder. Tous droits réservés.</p>
-          </div>
-        </footer>
+        <Footer />
       </div>
     </Router>
   );
 }
 
 export default App;
+

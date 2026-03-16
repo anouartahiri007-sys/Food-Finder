@@ -13,7 +13,19 @@ class ProfileController extends Controller
      */
     public function show(Request $request)
     {
-        return response()->json($request->user());
+        $user = $request->user();
+        return response()->json([
+            'id' => $user->id,
+            'name' => $user->name,
+            'last_name' => $user->last_name,
+            'email' => $user->email,
+            'role' => $user->role,
+            'phone' => $user->phone,
+            'website' => $user->website,
+            'gender' => $user->gender,
+            'date_of_birth' => $user->date_of_birth,
+            'profile_photo' => $user->profile_photo,
+        ]);
     }
 
     /**
@@ -28,16 +40,26 @@ class ProfileController extends Controller
             'last_name' => 'sometimes|string|max:255',
             'phone' => 'sometimes|nullable|string|max:20',
             'date_of_birth' => 'sometimes|nullable|date',
-            'profile_photo' => 'sometimes|nullable|string', // URL or base64 usually
+            'description' => 'sometimes|nullable|string|max:1000',
+            'profile_photo' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
 
-        $user->update($request->only([
+        $updateData = $request->only([
             'name',
             'last_name',
             'phone',
             'date_of_birth',
-            'profile_photo',
-        ]));
+            'description',
+        ]);
+
+        // Handle profile photo upload
+        if ($request->hasFile('profile_photo')) {
+            $photo = $request->file('profile_photo');
+            $photoPath = $photo->store('profile_photos', 'public');
+            $updateData['profile_photo'] = '/storage/' . $photoPath;
+        }
+
+        $user->update($updateData);
 
         return response()->json([
             'message' => 'Profile updated successfully',

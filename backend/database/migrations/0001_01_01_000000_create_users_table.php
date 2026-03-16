@@ -19,7 +19,7 @@ return new class extends Migration {
             $table->string('password');
             $table->date('date_of_birth')->nullable();
             $table->string('profile_photo')->nullable();
-            $table->enum('role', ['customer', 'owner'])->default('customer');
+            $table->enum('role', ['customer', 'owner', 'admin'])->default('customer');
             $table->boolean('accepted_privacy_policy')->default(false);
             $table->boolean('is_over_18')->default(false);
             $table->string('verification_code')->nullable();

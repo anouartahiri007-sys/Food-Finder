@@ -4,8 +4,6 @@ import { useTranslation } from 'react-i18next';
 import RestaurantMap from '../components/Map/RestaurantMap';
 import api from '../api/axios';
 
-const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-
 // Helper: get Google photo URL or fallback
 const getPhotoUrl = (restaurant) => {
     if (restaurant.image_url) return restaurant.image_url;
@@ -128,6 +126,10 @@ const Home = () => {
         return saved ? JSON.parse(saved) : [];
     });
     const [highlightedId, setHighlightedId] = useState(null);
+    
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 12;
 
     const searchTimeoutRef = useRef(null);
     const initialLoadDone = useRef(false);
@@ -164,12 +166,18 @@ const Home = () => {
                 cuisines = [],
                 priceFilter = null,
                 ratingFilter = 0,
+                openNowFilter = false,
             } = options;
 
+            // Convert price filter to API format
+            const priceRangeMap = { 1: '$', 2: '$$', 3: '$$$', 4: '$$$$' };
+            
             const params = {
                 search: query,
                 cuisine_type: cuisines.join(','),
-                min_rating: ratingFilter
+                min_rating: ratingFilter,
+                price_range: priceFilter ? priceRangeMap[priceFilter] : null,
+                open_now: openNowFilter ? true : null
             };
 
             const response = await api.get('/restaurants', { params });
@@ -186,8 +194,8 @@ const Home = () => {
                 longitude: res.longitude,
                 rating: res.rating || 0,
                 user_ratings: res.reviews_count || 0,
-                price_level: res.price_range === '$' ? 1 : res.price_range === '$$' ? 2 : 3,
-                open_now: res.is_open_now, // Use backend logic if available
+                price_level: res.price_range === '$' ? 1 : res.price_range === '$$' ? 2 : res.price_range === '$$$' ? 3 : 4,
+                open_now: res.is_open_now,
                 types: [res.cuisine_type],
                 image_url: res.image_url,
                 photo_url: res.image_url,
@@ -215,16 +223,25 @@ const Home = () => {
                     };
                     setUserLocation(newLoc);
                     initialLoadDone.current = true;
-                    fetchRestaurants({ location: newLoc });
+                    fetchRestaurants({ 
+                        location: newLoc,
+                        openNowFilter: openNow 
+                    });
                 },
                 () => {
                     initialLoadDone.current = true;
-                    fetchRestaurants({ location: { lat: 33.5731, lng: -7.5898 } });
+                    fetchRestaurants({ 
+                        location: { lat: 33.5731, lng: -7.5898 },
+                        openNowFilter: openNow
+                    });
                 }
             );
         } else {
             initialLoadDone.current = true;
-            fetchRestaurants({ location: { lat: 33.5731, lng: -7.5898 } });
+            fetchRestaurants({ 
+                location: { lat: 33.5731, lng: -7.5898 },
+                openNowFilter: openNow
+            });
         }
     }, []);
 
@@ -236,6 +253,11 @@ const Home = () => {
                 : [...prev, cuisine]
         );
     };
+
+    // Reset page when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery, selectedCuisines, minRating, priceFilter, openNow]);
 
     // Re-fetch when filters change (debounced)
     useEffect(() => {
@@ -251,11 +273,12 @@ const Home = () => {
                 location: userLocation,
                 priceFilter: priceFilter,
                 ratingFilter: minRating,
+                openNowFilter: openNow,
             });
         }, 500);
 
         return () => clearTimeout(searchTimeoutRef.current);
-    }, [searchQuery, selectedCuisines, minRating, priceFilter, openNow]);
+    }, [searchQuery, selectedCuisines, minRating, priceFilter, openNow, userLocation]);
 
     // Clear all filters
     const clearFilters = () => {
@@ -263,6 +286,7 @@ const Home = () => {
         setMinRating(0);
         setPriceFilter(null);
         setOpenNow(false);
+        setSearchQuery('');
     };
 
     // --- RANKING & POPULARITY FORMULAS ---
@@ -292,6 +316,22 @@ const Home = () => {
             .slice(0, 6);
     }, [restaurants]);
 
+    // Paginated restaurants
+    const paginatedRestaurants = useMemo(() => {
+        const start = (currentPage - 1) * ITEMS_PER_PAGE;
+        return sortedRestaurants.slice(start, start + ITEMS_PER_PAGE);
+    }, [sortedRestaurants, currentPage]);
+
+    const totalPages = Math.ceil(sortedRestaurants.length / ITEMS_PER_PAGE);
+    const hasMore = currentPage < totalPages;
+
+    // Load more handler
+    const handleLoadMore = () => {
+        if (hasMore) {
+            setCurrentPage(prev => prev + 1);
+        }
+    };
+
     // --- AUTOCOMPLETE LOGIC ---
     useEffect(() => {
         if (searchQuery.length < 2) {
@@ -316,7 +356,7 @@ const Home = () => {
 
         setSuggestions(filtered.slice(0, 5));
         setShowSuggestions(filtered.length > 0);
-    }, [searchQuery, restaurants]);
+    }, [searchQuery, restaurants, CUISINE_OPTIONS]);
 
     // Handle suggestion click
     const handleSuggestionClick = (s) => {
@@ -358,6 +398,9 @@ const Home = () => {
     };
 
     const hasActiveFilters = selectedCuisines.length > 0 || minRating > 0 || priceFilter !== null || openNow;
+
+    // Filtered restaurants for map (show all filtered results)
+    const filteredForMap = sortedRestaurants;
 
     return (
         <div className="home-layout">
@@ -564,7 +607,7 @@ const Home = () => {
                 {/* Result count */}
                 <div style={{ marginTop: '0.75rem', padding: '0.75rem 1rem', backgroundColor: 'var(--card-bg)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', textAlign: 'center' }}>
                     <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                        {loading ? t('common.loading', 'Recherche en cours...') : t('common.results_found', { count: restaurants.length })}
+                        {loading ? t('common.loading', 'Recherche en cours...') : `${sortedRestaurants.length} ${t('common.results_found', 'résultats')}`}
                     </span>
                 </div>
             </aside>
@@ -612,10 +655,10 @@ const Home = () => {
                     )}
                 </div>
 
-                {/* Map */}
+                {/* Map - shows filtered results */}
                 <div style={{ height: '320px', marginBottom: '2.5rem', borderRadius: 'var(--radius-lg)', overflow: 'hidden', boxShadow: 'var(--shadow-md)', border: '1px solid var(--border-color)' }}>
                     <RestaurantMap
-                        restaurants={restaurants}
+                        restaurants={filteredForMap}
                         center={userLocation}
                         onMarkerClick={(id) => setHighlightedId(id)}
                     />
@@ -724,7 +767,7 @@ const Home = () => {
                 ) : (
                     <>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
-                            {sortedRestaurants.map(restaurant => (
+                            {paginatedRestaurants.map(restaurant => (
                                 <RestaurantCard 
                                     key={restaurant.id} 
                                     restaurant={restaurant} 
@@ -735,12 +778,25 @@ const Home = () => {
                                 />
                             ))}
                         </div>
-                        {/* Load More Button Placeholder */}
-                        <div style={{ textAlign: 'center', paddingBottom: '2rem' }}>
-                            <button className="btn btn-secondary" style={{ padding: '0.75rem 2.5rem', borderRadius: 'var(--radius-full)' }}>
-                                {t('common.load_more')}
-                            </button>
-                        </div>
+                        
+                        {/* Load More Button - NOW WORKING */}
+                        {hasMore && (
+                            <div style={{ textAlign: 'center', paddingBottom: '2rem' }}>
+                                <button 
+                                    className="btn btn-secondary" 
+                                    onClick={handleLoadMore}
+                                    style={{ padding: '0.75rem 2.5rem', borderRadius: 'var(--radius-full)' }}
+                                >
+                                    {t('common.load_more', 'Charger plus')}
+                                </button>
+                            </div>
+                        )}
+                        
+                        {!hasMore && sortedRestaurants.length > 0 && (
+                            <div style={{ textAlign: 'center', paddingBottom: '2rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                                {t('common.no_more_results', 'Aucun autre résultat')}
+                            </div>
+                        )}
                     </>
                 )}
             </section>

@@ -69,6 +69,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::prefix('admin')->group(function() {
         Route::get('/stats', [\App\Http\Controllers\AdminController::class, 'stats']);
         Route::get('/users', [\App\Http\Controllers\AdminController::class, 'users']);
+        Route::get('/restaurants', [\App\Http\Controllers\AdminController::class, 'restaurants']);
         Route::post('/users/{user}/toggle-status', [\App\Http\Controllers\AdminController::class, 'toggleUserStatus']);
         Route::get('/reports', [\App\Http\Controllers\ReportController::class, 'index']);
         Route::put('/reports/{report}', [\App\Http\Controllers\ReportController::class, 'update']);

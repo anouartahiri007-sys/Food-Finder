@@ -44,6 +44,15 @@ class AdminController extends Controller
     }
 
     /**
+     * List all restaurants (for admin).
+     */
+    public function restaurants()
+    {
+        $this->checkAdmin();
+        return response()->json(Restaurant::with('user')->latest()->get());
+    }
+
+    /**
      * Toggle user status (active/blocked) - pseudo logic since we don't have is_active yet.
      */
     public function toggleUserStatus(User $user)
