@@ -70,7 +70,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/stats', [\App\Http\Controllers\AdminController::class, 'stats']);
         Route::get('/users', [\App\Http\Controllers\AdminController::class, 'users']);
         Route::get('/restaurants', [\App\Http\Controllers\AdminController::class, 'restaurants']);
+        Route::delete('/restaurants/{restaurant}', [\App\Http\Controllers\AdminController::class, 'deleteRestaurant']);
         Route::post('/users/{user}/toggle-status', [\App\Http\Controllers\AdminController::class, 'toggleUserStatus']);
+        Route::get('/blacklist', [\App\Http\Controllers\AdminController::class, 'blacklistedUsers']);
+        Route::post('/users/{user}/blacklist', [\App\Http\Controllers\AdminController::class, 'blacklistUser']);
+        Route::post('/users/{user}/unblacklist', [\App\Http\Controllers\AdminController::class, 'unblacklistUser']);
         Route::get('/reports', [\App\Http\Controllers\ReportController::class, 'index']);
         Route::put('/reports/{report}', [\App\Http\Controllers\ReportController::class, 'update']);
         Route::post('/reviews/{review}/moderate', [\App\Http\Controllers\AdminController::class, 'moderateReview']);

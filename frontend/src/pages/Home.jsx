@@ -1,13 +1,22 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, MapPin, Filter, Star, Clock, ChevronDown, X, Loader2, TrendingUp } from 'lucide-react';
+import { Search, MapPin, Filter, Star, Clock, ChevronDown, ChevronLeft, ChevronRight, X, Loader2, TrendingUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import RestaurantMap from '../components/Map/RestaurantMap';
 import api from '../api/axios';
 
+// Helper to get full image URL
+const getFullImageUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api').replace('/api', '');
+    const prefix = url.startsWith('/') ? '' : '/';
+    return `${API_BASE_URL}${prefix}${url}`;
+};
+
 // Helper: get Google photo URL or fallback
 const getPhotoUrl = (restaurant) => {
-    if (restaurant.image_url) return restaurant.image_url;
-    if (restaurant.photo_url) return restaurant.photo_url;
+    if (restaurant.image_url) return getFullImageUrl(restaurant.image_url);
+    if (restaurant.photo_url) return getFullImageUrl(restaurant.photo_url);
     return `https://picsum.photos/seed/${restaurant.id}/400/300`;
 };
 
@@ -129,11 +138,12 @@ const Home = () => {
     
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
-    const ITEMS_PER_PAGE = 12;
+    const ITEMS_PER_PAGE = 10;
 
     const searchTimeoutRef = useRef(null);
     const initialLoadDone = useRef(false);
     const suggestionRef = useRef(null);
+    const popularScrollRef = useRef(null);
 
     const CUISINE_OPTIONS = getCuisineOptions(t);
 
@@ -174,10 +184,9 @@ const Home = () => {
             
             const params = {
                 search: query,
-                cuisine_type: cuisines.join(','),
-                min_rating: ratingFilter,
-                price_range: priceFilter ? priceRangeMap[priceFilter] : null,
-                open_now: openNowFilter ? true : null
+                cuisine: cuisines.length > 0 ? cuisines.join(',') : undefined,
+                rating: ratingFilter > 0 ? ratingFilter : undefined,
+                price_range: priceFilter ? priceRangeMap[priceFilter] : undefined,
             };
 
             const response = await api.get('/restaurants', { params });
@@ -369,6 +378,17 @@ const Home = () => {
         setShowSuggestions(false);
     };
 
+    // Scroll popular restaurants left/right
+    const scrollPopular = (direction) => {
+        if (popularScrollRef.current) {
+            const scrollAmount = 300;
+            popularScrollRef.current.scrollBy({
+                left: direction === 'left' ? -scrollAmount : scrollAmount,
+                behavior: 'smooth'
+            });
+        }
+    };
+
     // Close suggestions on outside click
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -403,11 +423,8 @@ const Home = () => {
     const filteredForMap = sortedRestaurants;
 
     return (
-        <div className="home-layout">
+        <div className="home-layout" style={{ display: 'flex', gap: '2rem', padding: '2rem', maxWidth: '1400px', margin: '0 auto', boxSizing: 'border-box', width: '100%' }}>
             <style>{`
-                .home-layout {
-                    display: flex; gap: 2rem; padding: 2rem; max-width: 1400px; margin: 0 auto;
-                }
                 .search-section {
                     margin-bottom: 2rem; position: relative;
                 }
@@ -546,15 +563,39 @@ const Home = () => {
                             {/* Note minimale */}
                             <div style={{ marginBottom: '1.5rem' }}>
                                 <h4 style={{ marginBottom: '0.75rem', fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>{t('common.min_rating', 'Note minimale')}</h4>
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                                     {RATING_OPTIONS.map(rating => (
-                                        <button
+                                        <label
                                             key={rating}
-                                            onClick={() => setMinRating(minRating === rating ? 0 : rating)}
-                                            className={`filter-chip ${minRating === rating ? 'active active-rating' : ''}`}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.4rem',
+                                                padding: '0.5rem 0.75rem',
+                                                borderRadius: 'var(--radius-md)',
+                                                cursor: 'pointer',
+                                                backgroundColor: minRating === rating ? 'rgba(240, 90, 40, 0.1)' : 'transparent',
+                                                border: `1.5px solid ${minRating === rating ? 'var(--primary)' : 'var(--border-color)'}`,
+                                                transition: 'all 0.2s ease',
+                                                color: minRating === rating ? 'var(--primary)' : 'var(--text-primary)',
+                                                fontWeight: minRating === rating ? 600 : 400,
+                                            }}
                                         >
-                                            <Star size={14} fill={minRating === rating ? 'white' : 'none'} /> {rating}+
-                                        </button>
+                                            <input
+                                                type="radio"
+                                                name="minRating"
+                                                value={rating}
+                                                checked={minRating === rating}
+                                                onChange={() => setMinRating(rating)}
+                                                style={{
+                                                    accentColor: 'var(--primary)',
+                                                    width: '16px',
+                                                    height: '16px',
+                                                    cursor: 'pointer',
+                                                }}
+                                            />
+                                            <Star size={14} fill={minRating === rating ? 'var(--primary)' : 'none'} stroke={minRating === rating ? 'var(--primary)' : 'currentColor'} /> {rating}+
+                                        </label>
                                     ))}
                                 </div>
                             </div>
@@ -613,7 +654,7 @@ const Home = () => {
             </aside>
 
             {/* Results & Map */}
-            <section style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            <section style={{ flex: 0.8, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                 {/* Search Bar */}
                 <div className="search-section" ref={suggestionRef}>
                     <div className="search-input-wrapper">
@@ -684,17 +725,41 @@ const Home = () => {
 
                 {/* Popular Restaurants Section */}
                 {!loading && popularRestaurants.length > 0 && (
-                    <div style={{ marginBottom: '3rem' }}>
+                    <div style={{ marginBottom: '3rem', position: 'relative' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
                             <div style={{ padding: '0.5rem', background: 'rgba(245,158,11,0.1)', borderRadius: '10px' }}>
                                 <TrendingUp size={24} color="var(--warning)" />
                             </div>
-                            <div>
+                            <div style={{ flex: 1 }}>
                                 <h2 style={{ margin: 0, fontSize: '1.5rem' }}>{t('common.popular_restaurants')}</h2>
                                 <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>{t('common.popular_description')}</p>
                             </div>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button 
+                                    onClick={() => scrollPopular('left')}
+                                    style={{
+                                        width: '40px', height: '40px', borderRadius: '50%',
+                                        border: '1px solid var(--border-color)', background: 'var(--card-bg)',
+                                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        boxShadow: 'var(--shadow-sm)', transition: 'var(--transition)'
+                                    }}
+                                >
+                                    <ChevronLeft size={20} />
+                                </button>
+                                <button 
+                                    onClick={() => scrollPopular('right')}
+                                    style={{
+                                        width: '40px', height: '40px', borderRadius: '50%',
+                                        border: '1px solid var(--border-color)', background: 'var(--card-bg)',
+                                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        boxShadow: 'var(--shadow-sm)', transition: 'var(--transition)'
+                                    }}
+                                >
+                                    <ChevronRight size={20} />
+                                </button>
+                            </div>
                         </div>
-                        <div className="popular-scroll">
+                        <div className="popular-scroll" ref={popularScrollRef}>
                             {popularRestaurants.map(restaurant => (
                                 <RestaurantCard 
                                     key={`pop-${restaurant.id}`} 
@@ -750,7 +815,7 @@ const Home = () => {
                 </div>
 
                 {loading ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                    <div className="restaurant-grid">
                         {[1, 2, 3, 4, 5, 6].map(n => <SkeletonCard key={n} />)}
                     </div>
                 ) : sortedRestaurants.length === 0 ? (

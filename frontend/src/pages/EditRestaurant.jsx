@@ -1,8 +1,17 @@
 import { useState, useEffect } from 'react'; 
 import { useNavigate, useParams } from 'react-router-dom';
-import { Utensils, MapPin, Phone, Globe, Clock, DollarSign, Image as ImageIcon, Save, ArrowLeft, Coffee } from 'lucide-react';
+import { Utensils, MapPin, Phone, Globe, Clock, DollarSign, Image as ImageIcon, Save, ArrowLeft, Coffee, X, Plus } from 'lucide-react';
 import { toast } from 'react-toastify';
 import api from '../api/axios';
+
+// Helper to get full image URL
+const getFullImageUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api').replace('/api', '');
+    const prefix = url.startsWith('/') ? '' : '/';
+    return `${API_BASE_URL}${prefix}${url}`;
+};
 
 const EditRestaurant = () => {
     const { id } = useParams();
@@ -10,12 +19,13 @@ const EditRestaurant = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [preview, setPreview] = useState(null);
+    const [previews, setPreviews] = useState([]);
     const [formData, setFormData] = useState({ 
         name: '', 
         description: '', 
         address: '',
         cuisine_type: '',
-        price_range: '$$',
+        price_range: '$',
         opening_time: '09:00',
         closing_time: '22:00',
         phone: '',
@@ -23,6 +33,8 @@ const EditRestaurant = () => {
         dietary_options: [],
     });
     const [image, setImage] = useState(null);
+    const [images, setImages] = useState([]);
+    const [existingPhotos, setExistingPhotos] = useState([]);
 
     const dietaryOptionsList = [
         'Végétarien', 'Vegan', 'Sans Gluten', 'Halal', 'Casher', 'Bio', 'Sans Lactose'
@@ -45,7 +57,10 @@ const EditRestaurant = () => {
                     website: data.website || '', 
                     dietary_options: data.dietary_options || [], 
                 }); 
-                if (data.image_url) setPreview(data.image_url);
+                if (data.image_url) setPreview(getFullImageUrl(data.image_url));
+                if (data.photos && data.photos.length > 0) {
+                    setExistingPhotos(data.photos.map(p => ({ ...p, url: getFullImageUrl(p.url) })));
+                }
             } catch (error) {
                 console.error('Error fetching restaurant', error);
                 toast.error('Erreur lors de la récupération des données.');
@@ -78,6 +93,37 @@ const EditRestaurant = () => {
         }
     };
 
+    const handleMultipleImageChange = (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length > 0) {
+            const newImages = [...images, ...files];
+            setImages(newImages);
+            
+            const newPreviews = files.map(file => ({
+                file,
+                url: URL.createObjectURL(file)
+            }));
+            setPreviews([...previews, ...newPreviews]);
+        }
+    };
+
+    const removeImage = (index) => {
+        const newImages = images.filter((_, i) => i !== index);
+        const newPreviews = previews.filter((_, i) => i !== index);
+        setImages(newImages);
+        setPreviews(newPreviews);
+    };
+
+    const removeExistingPhoto = async (photoId) => {
+        try {
+            await api.delete(`/photos/${photoId}`);
+            setExistingPhotos(existingPhotos.filter(p => p.id !== photoId));
+            toast.success('Photo supprimée');
+        } catch (error) {
+            toast.error('Erreur lors de la suppression de la photo');
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSaving(true);
@@ -94,13 +140,18 @@ const EditRestaurant = () => {
         });
         if (image) data.append('image', image);
 
+        // Append multiple images
+        images.forEach((img, index) => {
+            data.append(`images[${index}]`, img);
+        });
+
         try {
             // Using POST with _method=PUT for multipart/form-data support in Laravel
             await api.post(`/restaurants/${id}`, data, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             }); 
             toast.success("Modifications enregistrées !"); 
-            navigate('/dashboard'); 
+            navigate(-1); 
         } catch (error) {
             console.error('Error updating restaurant', error);
             toast.error('Erreur lors de la mise à jour du restaurant.');
@@ -203,7 +254,7 @@ const EditRestaurant = () => {
                     </div>
 
                     <div className="form-group full-width">
-                        <label><ImageIcon size={18} /> Photo de l'établissement</label> 
+                        <label><ImageIcon size={18} /> Photo principale</label> 
                         <div style={{ border: '2px dashed var(--border-color)', borderRadius: 'var(--radius-md)', padding: '2rem', textAlign: 'center', cursor: 'pointer', transition: 'var(--transition)' }} onClick={() => document.getElementById('image-upload').click()}> 
                             {preview ? ( 
                                 <img src={preview} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: 'var(--radius-md)', objectFit: 'cover' }} />
@@ -215,6 +266,97 @@ const EditRestaurant = () => {
                             )}
                             <input id="image-upload" type="file" hidden accept="image/*" onChange={handleImageChange} />
                         </div> 
+                    </div>
+
+                    {/* Additional Photos */}
+                    <div className="form-group full-width">
+                        <label><ImageIcon size={18} /> Photos supplémentaires</label>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
+                            Vous pouvez ajouter plusieurs photos pour votre établissement. Les photos existantes ne seront pas modifiées.
+                        </p>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                            {/* Existing photos */}
+                            {existingPhotos.map((photo) => (
+                                <div key={photo.id} style={{ position: 'relative', borderRadius: 'var(--radius-md)', overflow: 'hidden', aspectRatio: '1' }}>
+                                    <img src={photo.url} alt="Existing" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <button
+                                        type="button"
+                                        onClick={() => removeExistingPhoto(photo.id)}
+                                        style={{
+                                            position: 'absolute',
+                                            top: '4px',
+                                            right: '4px',
+                                            background: 'rgba(0,0,0,0.6)',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '50%',
+                                            width: '24px',
+                                            height: '24px',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                        }}
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                            ))}
+                            {/* New preview images */}
+                            {previews.map((preview, index) => (
+                                <div key={`new-${index}`} style={{ position: 'relative', borderRadius: 'var(--radius-md)', overflow: 'hidden', aspectRatio: '1' }}>
+                                    <img src={preview.url} alt={`Preview ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <button
+                                        type="button"
+                                        onClick={() => removeImage(index)}
+                                        style={{
+                                            position: 'absolute',
+                                            top: '4px',
+                                            right: '4px',
+                                            background: 'rgba(0,0,0,0.6)',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '50%',
+                                            width: '24px',
+                                            height: '24px',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                        }}
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                            ))}
+                            <label
+                                htmlFor="multiple-image-upload"
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    border: '2px dashed var(--border-color)',
+                                    borderRadius: 'var(--radius-md)',
+                                    cursor: 'pointer',
+                                    aspectRatio: '1',
+                                    transition: 'var(--transition)',
+                                }}
+                            >
+                                <Plus size={32} style={{ color: 'var(--text-muted)' }} />
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                                    Ajouter
+                                </span>
+                                <input
+                                    id="multiple-image-upload"
+                                    type="file"
+                                    multiple
+                                    accept="image/*"
+                                    onChange={handleMultipleImageChange}
+                                    hidden
+                                />
+                            </label>
+                        </div>
                     </div> 
  
                     <button type="submit" className="btn btn-primary full-width" disabled={saving} style={{ marginTop: '1.5rem', height: '50px' }}>

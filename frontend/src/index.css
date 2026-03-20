@@ -29,6 +29,17 @@
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Fix horizontal overflow */
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 /* Dark Mode Implementation */
 [data-theme='dark'] {
   --bg-color: #0f172a;
@@ -372,6 +383,25 @@ a:hover {
   width: 90%;
   max-width: 1200px;
   margin: 0 auto;
+}
+
+/* Restaurant Grid - Responsive card layout */
+.restaurant-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .restaurant-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .restaurant-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .detail-grid {

@@ -13,6 +13,12 @@ class ReservationController extends Controller
      */
     public function store(Request $request, $restaurantId)
     {
+        // Check if user is blocked
+        $user = $request->user();
+        if ($user->is_blocked) {
+            return response()->json(['message' => 'Votre compte est bloqué. Vous ne pouvez pas faire de réservation.'], 403);
+        }
+
         $request->validate([
             'reservation_date' => 'required|date|after_or_equal:today',
             'reservation_time' => 'required',

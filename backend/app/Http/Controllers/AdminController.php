@@ -35,12 +35,12 @@ class AdminController extends Controller
     }
 
     /**
-     * List all users.
+     * List all users (excluding blocked).
      */
     public function users()
     {
         $this->checkAdmin();
-        return response()->json(User::latest()->get());
+        return response()->json(User::where('is_blocked', false)->latest()->get());
     }
 
     /**
@@ -53,12 +53,51 @@ class AdminController extends Controller
     }
 
     /**
-     * Toggle user status (active/blocked) - pseudo logic since we don't have is_active yet.
+     * Delete a restaurant (for admin).
+     */
+    public function deleteRestaurant(Restaurant $restaurant)
+    {
+        $this->checkAdmin();
+        $restaurant->delete();
+        return response()->json(['message' => 'Restaurant deleted successfully']);
+    }
+
+    /**
+     * Toggle user status (active/blocked).
      */
     public function toggleUserStatus(User $user)
     {
-        // $user->update(['is_blocked' => !$user->is_blocked]);
-        return response()->json(['message' => 'User status updated']);
+        $user->update(['is_blocked' => !$user->is_blocked]);
+        return response()->json(['message' => 'User status updated', 'is_blocked' => $user->is_blocked]);
+    }
+
+    /**
+     * Get blacklisted users.
+     */
+    public function blacklistedUsers()
+    {
+        $this->checkAdmin();
+        return response()->json(User::where('is_blocked', true)->latest()->get());
+    }
+
+    /**
+     * Add user to blacklist.
+     */
+    public function blacklistUser(User $user)
+    {
+        $this->checkAdmin();
+        $user->update(['is_blocked' => true]);
+        return response()->json(['message' => 'User added to blacklist']);
+    }
+
+    /**
+     * Remove user from blacklist.
+     */
+    public function unblacklistUser(User $user)
+    {
+        $this->checkAdmin();
+        $user->update(['is_blocked' => false]);
+        return response()->json(['message' => 'User removed from blacklist']);
     }
 
     /**

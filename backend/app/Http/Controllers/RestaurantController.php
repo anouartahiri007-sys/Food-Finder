@@ -45,8 +45,10 @@ class RestaurantController extends Controller
         }
 
         // 4. Faceted Search - Minimum Rating
-        if ($request->filled('rating')) {
-            $query->where('rating', '>=', $request->get('rating'));
+        $rating = $request->get('rating');
+        // Only apply filter if rating is explicitly set and greater than 0
+        if ($rating !== null && $rating !== '' && floatval($rating) > 0) {
+            $query->where('rating', '>=', floatval($rating));
         }
 
         // 5. Geolocation Search (Distance)
@@ -87,13 +89,15 @@ class RestaurantController extends Controller
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
             'cuisine_type' => 'required|string|max:100',
-            'price_range' => 'required|string|in:$,$$,$$$,$$$$',
+            'price_range' => 'required|string|in:$,$,$$,$$',
             'dietary_options' => 'nullable|array',
             'opening_time' => 'nullable',
             'closing_time' => 'nullable',
             'phone' => 'nullable|string|max:20',
             'website' => 'nullable|url|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'images' => 'nullable|array',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
         $user = $request->user();
@@ -107,7 +111,19 @@ class RestaurantController extends Controller
 
         $restaurant->save();
 
-        return response()->json($restaurant, 201);
+        // Handle multiple images (photos)
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $imageFile) {
+                $path = $imageFile->store('restaurants', 'public');
+                $restaurant->photos()->create([
+                    'url' => Storage::url($path),
+                    'type' => 'restaurant',
+                    'user_id' => $user->id,
+                ]);
+            }
+        }
+
+        return response()->json($restaurant->fresh('photos'), 201);
     }
 
     /**
@@ -115,7 +131,7 @@ class RestaurantController extends Controller
      */
     public function show(string $id)
     {
-        $restaurant = Restaurant::withCount('reviews')->findOrFail($id);
+        $restaurant = Restaurant::withCount('reviews')->with('photos')->with('reviews.user')->findOrFail($id);
         return response()->json($restaurant);
     }
 
@@ -145,6 +161,8 @@ class RestaurantController extends Controller
             'phone' => 'nullable|string|max:20',
             'website' => 'nullable|url|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'images' => 'nullable|array',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
         $restaurant->fill($validated);
@@ -162,7 +180,19 @@ class RestaurantController extends Controller
 
         $restaurant->save();
 
-        return response()->json($restaurant);
+        // Handle multiple images (photos)
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $imageFile) {
+                $path = $imageFile->store('restaurants', 'public');
+                $restaurant->photos()->create([
+                    'url' => Storage::url($path),
+                    'type' => 'restaurant',
+                    'user_id' => $request->user()->id,
+                ]);
+            }
+        }
+
+        return response()->json($restaurant->fresh('photos'));
     }
 
     /**

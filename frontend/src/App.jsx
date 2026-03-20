@@ -119,7 +119,9 @@ function App() {
                 {user.role === 'admin' && (
                   <Link to="/admin/dashboard" className="nav-item" style={{ color: 'var(--danger)', fontWeight: '700' }}>SaaS Admin</Link>
                 )}
-                <Link to="/profile" className="nav-item">{t('nav.profile')}</Link>
+                {user.role !== 'admin' && (
+                  <Link to="/profile" className="nav-item">{t('nav.profile')}</Link>
+                )}
                 <button onClick={handleLogout} className="btn btn-secondary">{t('nav.logout')}</button>
               </>
             ) : (

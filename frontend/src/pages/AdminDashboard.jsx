@@ -4,10 +4,20 @@ import { toast } from 'react-toastify';
 import api from '../api/axios';
 import { useNavigate } from 'react-router-dom';
 
+// Helper to get full image URL
+const getFullImageUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api').replace('/api', '');
+    const prefix = url.startsWith('/') ? '' : '/';
+    return `${API_BASE_URL}${prefix}${url}`;
+};
+
 const AdminDashboard = () => {
     const navigate = useNavigate();
     const [clients, setClients] = useState([]);
     const [restaurants, setRestaurants] = useState([]);
+    const [blacklistedUsers, setBlacklistedUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('clients');
     const [searchTerm, setSearchTerm] = useState('');
@@ -26,6 +36,9 @@ const AdminDashboard = () => {
 
                 const resRes = await api.get('/admin/restaurants');
                 setRestaurants(resRes.data);
+
+                const blacklistRes = await api.get('/admin/blacklist');
+                setBlacklistedUsers(blacklistRes.data);
             } catch (err) {
                 console.error(err);
                 toast.error('Erreur de chargement des données');
@@ -60,6 +73,80 @@ const AdminDashboard = () => {
             hour: '2-digit',
             minute: '2-digit'
         });
+    };
+
+    // Delete restaurant handler
+    const handleDeleteRestaurant = async (id, name) => {
+        if (!window.confirm(`Êtes-vous sûr de vouloir supprimer "${name}" ?`)) {
+            return;
+        }
+        try {
+            await api.delete(`/admin/restaurants/${id}`);
+            setRestaurants(restaurants.filter(r => r.id !== id));
+            toast.success('Restaurant supprimé avec succès');
+        } catch (err) {
+            console.error(err);
+            toast.error('Erreur lors de la suppression');
+        }
+    };
+
+    // Delete (block) user handler
+    const handleDeleteUser = async (id, name) => {
+        if (!window.confirm(`Êtes-vous sûr de vouloir bloquer "${name}" ? Cette action empêchera l'utilisateur de se connecter.`)) {
+            return;
+        }
+        try {
+            await api.post(`/admin/users/${id}/blacklist`);
+            setClients(clients.filter(c => c.id !== id));
+            // Also add to blacklist
+            const user = clients.find(c => c.id === id);
+            if (user) {
+                setBlacklistedUsers([...blacklistedUsers, { ...user, is_blocked: true }]);
+            }
+            toast.success('Utilisateur bloqué et ajouté à la blacklist');
+        } catch (err) {
+            console.error(err);
+            toast.error('Erreur lors du blocage');
+        }
+    };
+
+    // Unblacklist user handler
+    const handleUnblacklistUser = async (id, name) => {
+        if (!window.confirm(`Voulez-vous retirer "${name}" de la blacklist ?`)) {
+            return;
+        }
+        try {
+            await api.post(`/admin/users/${id}/unblacklist`);
+            setBlacklistedUsers(blacklistedUsers.filter(u => u.id !== id));
+            // Also update the clients list
+            const clientsRes = await api.get('/admin/users');
+            setClients(clientsRes.data);
+            toast.success('Utilisateur retiré de la blacklist');
+        } catch (err) {
+            console.error(err);
+            toast.error('Erreur lors de la mise à jour');
+        }
+    };
+
+    // Add to blacklist handler (from clients list)
+    const handleBlacklistUser = async (id, name) => {
+        if (!window.confirm(`Voulez-vous ajouter "${name}" à la blacklist ?`)) {
+            return;
+        }
+        try {
+            await api.post(`/admin/users/${id}/blacklist`);
+            const user = clients.find(c => c.id === id);
+            if (user) {
+                setBlacklistedUsers([...blacklistedUsers, { ...user, is_blocked: true }]);
+            }
+            // Also update the clients list
+            const clientsRes = await api.get('/admin/users');
+            setClients(clientsRes.data);
+            toast.success('Utilisateur ajouté à la blacklist');
+        } catch (err) {
+            console.error(err);
+            toast.error('Erreur lors de la mise à jour');
+        }
     };
 
     return (
@@ -135,6 +222,11 @@ const AdminDashboard = () => {
                     style={{ padding: '1rem', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '700', color: activeTab === 'reports' ? 'var(--danger)' : 'var(--text-muted)', borderBottom: activeTab === 'reports' ? '3px solid var(--danger)' : 'none', whiteSpace: 'nowrap' }}> 
                     Signalements Avis
                 </button>
+                <button 
+                    onClick={() => setActiveTab('blacklist')} 
+                    style={{ padding: '1rem', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '700', color: activeTab === 'blacklist' ? 'var(--danger)' : 'var(--text-muted)', borderBottom: activeTab === 'blacklist' ? '3px solid var(--danger)' : 'none', whiteSpace: 'nowrap' }}>
+                    Black List
+                </button>
             </div>
 
             {/* Content Table */}
@@ -144,19 +236,28 @@ const AdminDashboard = () => {
                         <thead style={{ backgroundColor: 'rgba(0,0,0,0.03)', borderBottom: '1px solid var(--border-color)' }}> 
                             {activeTab === 'clients' ? ( 
                                 <tr> 
-                                    <th style={{ padding: '1.2rem' }}>Profil</th>
+                                    <th style={{ padding: '1.2rem' }}>Utilisateur</th>
                                     <th style={{ padding: '1.2rem' }}>Email</th>
                                     <th style={{ padding: '1.2rem' }}>Dernière Connexion</th>
                                     <th style={{ padding: '1.2rem' }}>Dernière Déconnexion</th>
+                                    <th style={{ padding: '1.2rem' }}>Statut</th>
                                     <th style={{ padding: '1.2rem' }}>Actions</th>
                                 </tr>
                             ) : activeTab === 'restaurants' ? (
                                 <tr>
                                     <th style={{ padding: '1.2rem' }}>Établissement</th>
                                     <th style={{ padding: '1.2rem' }}>Cuisine & Prix</th>
-                                    <th style={{ padding: '1.2rem' }}>Contact Pro</th> 
-                                    <th style={{ padding: '1.2rem' }}>Site Web</th> 
-                                    <th style={{ padding: '1.2rem' }}>Actions</th> 
+                                    <th style={{ padding: '1.2rem' }}>Téléphone</th>
+                                    <th style={{ padding: '1.2rem' }}>Site</th>
+                                    <th style={{ padding: '1.2rem' }}>Actions</th>
+                                </tr>
+                            ) : activeTab === 'blacklist' ? (
+                                <tr>
+                                    <th style={{ padding: '1.2rem' }}>Utilisateur</th>
+                                    <th style={{ padding: '1.2rem' }}>Rôle</th>
+                                    <th style={{ padding: '1.2rem' }}>Date d'inscription</th>
+                                    <th style={{ padding: '1.2rem' }}>Statut</th>
+                                    <th style={{ padding: '1.2rem' }}>Actions</th>
                                 </tr>
                             ) : (
                                 <tr>
@@ -192,9 +293,23 @@ const AdminDashboard = () => {
                                             <td style={{ padding: '1.2rem' }}>{formatDate(client.last_login_at)}</td> 
                                             <td style={{ padding: '1.2rem' }}>{formatDate(client.last_logout_at)}</td>
                                             <td style={{ padding: '1.2rem' }}>
-                                                <button className="btn btn-secondary" style={{ color: 'var(--danger)', padding: '0.5rem' }} onClick={() => toast.info('Action restreinte')}>
-                                                    <Trash2 size={18} />
-                                                </button>
+                                                {client.is_blocked ? (
+                                                    <span style={{ color: 'var(--danger)', fontWeight: '600' }}>Bloqué</span>
+                                                ) : (
+                                                    <span style={{ color: 'var(--success)', fontWeight: '600' }}>Actif</span>
+                                                )}
+                                            </td>
+                                            <td style={{ padding: '1.2rem' }}>
+                                                {client.role !== 'admin' && (
+                                                    <button 
+                                                        className="btn btn-secondary" 
+                                                        style={{ color: 'var(--danger)', padding: '0.5rem' }} 
+                                                        onClick={() => handleDeleteUser(client.id, client.name || client.email)}
+                                                        title="Bloquer l'utilisateur"
+                                                    >
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                )}
                                             </td>
                                         </tr>
                                     ))
@@ -211,7 +326,7 @@ const AdminDashboard = () => {
                                         <tr key={res.id} style={{ borderBottom: '1px solid var(--border-color)' }}> 
                                             <td style={{ padding: '1.2rem' }}> 
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                                    <img src={res.image_url || 'https://via.placeholder.com/50'} alt={res.name} style={{ width: '50px', height: '50px', borderRadius: '8px', objectFit: 'cover' }} />
+                                                    <img src={getFullImageUrl(res.image_url) || 'https://via.placeholder.com/50'} alt={res.name} style={{ width: '50px', height: '50px', borderRadius: '8px', objectFit: 'cover' }} />
                                                     <div>
                                                         <div style={{ fontWeight: '700' }}>{res.name}</div>
                                                         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{res.address}</div>
@@ -231,7 +346,7 @@ const AdminDashboard = () => {
                                                 ) : '-'}
                                             </td> 
                                             <td style={{ padding: '1.2rem' }}> 
-                                                <button className="btn btn-secondary" style={{ color: 'var(--danger)', padding: '0.5rem' }} onClick={() => toast.info('Action restreinte')}>
+                                                <button className="btn btn-secondary" style={{ color: 'var(--danger)', padding: '0.5rem' }} onClick={() => handleDeleteRestaurant(res.id, res.name)}>
                                                     <Trash2 size={18} />
                                                 </button> 
                                             </td> 
@@ -241,6 +356,59 @@ const AdminDashboard = () => {
                                     <tr>
                                         <td colSpan="5" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
                                             Aucun restaurant trouvé
+                                        </td>
+                                    </tr>
+                                )
+                            ) : activeTab === 'reports' ? (
+                                <tr>
+                                    <td colSpan="5" style={{ padding: '4rem', textAlign: 'center' }}>
+                                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🚩</div> 
+                                        <h3 style={{ marginBottom: '0.5rem' }}>Gestion des Signalements</h3> 
+                                        <p style={{ color: 'var(--text-muted)' }}>La liste des avis signalés sera affichée ici après validation.</p> 
+                                    </td> 
+                                </tr>
+                            ) : activeTab === 'blacklist' ? (
+                                blacklistedUsers.length > 0 ? (
+                                    blacklistedUsers.map(user => (
+                                        <tr key={user.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                            <td style={{ padding: '1.2rem' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--danger)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700' }}>
+                                                        {user.name ? user.name.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <div style={{ fontWeight: '600' }}>{user.name || '-'} {user.last_name || ''}</div>
+                                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{user.email}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '1.2rem' }}>
+                                                <span style={{ textTransform: 'capitalize' }}>{user.role}</span>
+                                            </td>
+                                            <td style={{ padding: '1.2rem' }}>
+                                                {formatDate(user.created_at)}
+                                            </td>
+                                            <td style={{ padding: '1.2rem' }}>
+                                                <span style={{ color: 'var(--danger)', fontWeight: '600' }}>Bloqué</span>
+                                            </td>
+                                            <td style={{ padding: '1.2rem' }}>
+                                                <button 
+                                                    className="btn btn-secondary" 
+                                                    style={{ color: 'var(--success)', padding: '0.5rem' }} 
+                                                    onClick={() => handleUnblacklistUser(user.id, user.name || user.email)}
+                                                    title="Retirer de la blacklist"
+                                                >
+                                                    <ShieldCheck size={18} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="5" style={{ padding: '4rem', textAlign: 'center' }}>
+                                            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🛡️</div> 
+                                            <h3 style={{ marginBottom: '0.5rem' }}>Liste Noire</h3> 
+                                            <p style={{ color: 'var(--text-muted)' }}>Aucun utilisateur bloqué</p> 
                                         </td>
                                     </tr>
                                 )
