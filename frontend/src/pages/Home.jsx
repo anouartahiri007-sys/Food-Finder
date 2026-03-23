@@ -13,11 +13,14 @@ const getFullImageUrl = (url) => {
     return `${API_BASE_URL}${prefix}${url}`;
 };
 
+// Default placeholder image
+const DEFAULT_RESTAURANT_IMAGE = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop';
+
 // Helper: get Google photo URL or fallback
 const getPhotoUrl = (restaurant) => {
     if (restaurant.image_url) return getFullImageUrl(restaurant.image_url);
     if (restaurant.photo_url) return getFullImageUrl(restaurant.photo_url);
-    return `https://picsum.photos/seed/${restaurant.id}/400/300`;
+    return DEFAULT_RESTAURANT_IMAGE;
 };
 
 // Cuisine filter options (Translatable)
@@ -189,7 +192,11 @@ const Home = () => {
                 price_range: priceFilter ? priceRangeMap[priceFilter] : undefined,
             };
 
-            const response = await api.get('/restaurants', { params });
+            // Use no-cache headers to prevent caching
+            const response = await api.get('/restaurants', { 
+                params,
+                headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+            });
             const backendData = response.data;
             
             // Handle Laravel Pagination (backendData.data) or simple array (backendData)
@@ -831,6 +838,22 @@ const Home = () => {
                     </div>
                 ) : (
                     <>
+                        <div style={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between', 
+                            alignItems: 'center',
+                            marginBottom: '1.5rem',
+                            padding: '0 0.5rem'
+                        }}>
+                            <span style={{ 
+                                color: 'var(--text-muted)',
+                                fontSize: '0.9rem',
+                                fontWeight: '500'
+                            }}>
+                                {sortedRestaurants.length} {sortedRestaurants.length === 1 ? 'restaurant trouvé' : 'restaurants trouvés'}
+                            </span>
+                        </div>
+
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
                             {paginatedRestaurants.map(restaurant => (
                                 <RestaurantCard 
@@ -844,7 +867,7 @@ const Home = () => {
                             ))}
                         </div>
                         
-                        {/* Load More Button - NOW WORKING */}
+                        {/* Load More Button */}
                         {hasMore && (
                             <div style={{ textAlign: 'center', paddingBottom: '2rem' }}>
                                 <button 
@@ -854,12 +877,6 @@ const Home = () => {
                                 >
                                     {t('common.load_more', 'Charger plus')}
                                 </button>
-                            </div>
-                        )}
-                        
-                        {!hasMore && sortedRestaurants.length > 0 && (
-                            <div style={{ textAlign: 'center', paddingBottom: '2rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                                {t('common.no_more_results', 'Aucun autre résultat')}
                             </div>
                         )}
                     </>

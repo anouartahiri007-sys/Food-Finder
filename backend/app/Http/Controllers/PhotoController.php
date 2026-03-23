@@ -16,7 +16,8 @@ class PhotoController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'url' => 'required|string',
+            'url' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:2048',
             'description' => 'nullable|string',
             'type' => 'required|in:restaurant,review,menu_item',
             'restaurant_id' => 'nullable|exists:restaurants,id',
@@ -24,10 +25,16 @@ class PhotoController extends Controller
             'menu_item_id' => 'nullable|exists:menu_items,id',
         ]);
 
-        // Authorization checks based on type could be added here
+        $url = $request->url;
+        
+        // Handle file upload
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('photos', 'public');
+            $url = '/storage/' . $path;
+        }
 
         $photo = Photo::create([
-            'url' => $request->url,
+            'url' => $url,
             'description' => $request->description,
             'type' => $request->type,
             'restaurant_id' => $request->restaurant_id,

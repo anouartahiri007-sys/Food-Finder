@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Restaurant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Http\Requests\StoreRestaurantRequest;
+use App\Http\Requests\UpdateRestaurantRequest;
+use App\Http\Resources\RestaurantResource;
 
 class RestaurantController extends Controller
 {
@@ -13,7 +16,7 @@ class RestaurantController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Restaurant::query();
+        $query = Restaurant::query()->withCount('reviews')->with('photos')->orderBy('created_at', 'desc');
 
         // 1. Keyword Search (Name or Cuisine)
         if ($request->filled('search')) {
@@ -29,7 +32,7 @@ class RestaurantController extends Controller
             $query->where('cuisine_type', $request->get('cuisine'));
         }
 
-        // 3. Faceted Search - Price Range (cheap, medium, expensive mapped to $, $$, $$$)
+        // 3. Faceted Search - Price Range
         if ($request->filled('price_range')) {
             $priceMap = [
                 'cheap' => '$',
@@ -46,7 +49,6 @@ class RestaurantController extends Controller
 
         // 4. Faceted Search - Minimum Rating
         $rating = $request->get('rating');
-        // Only apply filter if rating is explicitly set and greater than 0
         if ($rating !== null && $rating !== '' && floatval($rating) > 0) {
             $query->where('rating', '>=', floatval($rating));
         }
@@ -55,14 +57,11 @@ class RestaurantController extends Controller
         if ($request->filled('lat') && $request->filled('lng')) {
             $lat = $request->get('lat');
             $lng = $request->get('lng');
-            $radius = $request->get('radius', 50); // Default 50km
+            $radius = $request->get('radius', 50);
 
             $driver = \DB::getDriverName();
 
             if ($driver === 'sqlite') {
-                // SQLite doesn't support acos/cos/radians natively.
-                // For a demo/local env, we can just return all results or 
-                // perform a simple bounding box filter.
                 $query->whereBetween('latitude', [$lat - 0.5, $lat + 0.5])
                     ->whereBetween('longitude', [$lng - 0.5, $lng + 0.5]);
             } else {
@@ -74,31 +73,15 @@ class RestaurantController extends Controller
             }
         }
 
-        return response()->json($query->paginate(10));
+        return response()->json(RestaurantResource::collection($query->paginate(10)));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreRestaurantRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'address' => 'required|string|max:255',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
-            'cuisine_type' => 'required|string|max:100',
-            'price_range' => 'required|string|in:$,$,$$,$$',
-            'dietary_options' => 'nullable|array',
-            'opening_time' => 'nullable',
-            'closing_time' => 'nullable',
-            'phone' => 'nullable|string|max:20',
-            'website' => 'nullable|url|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-            'images' => 'nullable|array',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-        ]);
+        $validated = $request->validated();
 
         $user = $request->user();
         $restaurant = new Restaurant($validated);
@@ -123,7 +106,7 @@ class RestaurantController extends Controller
             }
         }
 
-        return response()->json($restaurant->fresh('photos'), 201);
+        return response()->json(new RestaurantResource($restaurant->fresh(['photos', 'user'])), 201);
     }
 
     /**
@@ -131,14 +114,16 @@ class RestaurantController extends Controller
      */
     public function show(string $id)
     {
-        $restaurant = Restaurant::withCount('reviews')->with('photos')->with('reviews.user')->findOrFail($id);
-        return response()->json($restaurant);
+        $restaurant = Restaurant::withCount('reviews')
+            ->with(['photos', 'reviews.user', 'workingHours'])
+            ->findOrFail($id);
+        return response()->json(new RestaurantResource($restaurant));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(UpdateRestaurantRequest $request, string $id)
     {
         $restaurant = Restaurant::findOrFail($id);
 
@@ -147,23 +132,7 @@ class RestaurantController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
-            'address' => 'sometimes|required|string|max:255',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
-            'cuisine_type' => 'sometimes|required|string|max:100',
-            'price_range' => 'sometimes|required|string|in:$,$$,$$$,$$$$',
-            'dietary_options' => 'nullable|array',
-            'opening_time' => 'nullable',
-            'closing_time' => 'nullable',
-            'phone' => 'nullable|string|max:20',
-            'website' => 'nullable|url|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-            'images' => 'nullable|array',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-        ]);
+        $validated = $request->validated();
 
         $restaurant->fill($validated);
 
@@ -192,7 +161,7 @@ class RestaurantController extends Controller
             }
         }
 
-        return response()->json($restaurant->fresh('photos'));
+        return response()->json(new RestaurantResource($restaurant->fresh(['photos', 'user'])));
     }
 
     /**
@@ -219,8 +188,8 @@ class RestaurantController extends Controller
 
     public function ownerRestaurants(Request $request)
     {
-        $restaurants = $request->user()->restaurants;
-        return response()->json($restaurants);
+        $restaurants = $request->user()->restaurants()->withCount('reviews')->with('photos', 'workingHours')->get();
+        return response()->json(RestaurantResource::collection($restaurants));
     }
 
     /**
@@ -231,11 +200,15 @@ class RestaurantController extends Controller
         $user = $request->user();
         $restaurantIds = $user->restaurants()->pluck('id');
 
+        $totalReviews = \App\Models\Review::whereIn('restaurant_id', $restaurantIds)->count();
+        $avgRating = $user->restaurants()->avg('rating') ?: 0;
+        $totalReservations = \App\Models\Reservation::whereIn('restaurant_id', $restaurantIds)->count();
+
         return response()->json([
             'restaurants_count' => $restaurantIds->count(),
-            'total_reviews' => \App\Models\Review::whereIn('restaurant_id', $restaurantIds)->count(),
-            'average_rating' => $user->restaurants()->avg('rating') ?: 0,
-            'total_reservations' => \App\Models\Reservation::whereIn('restaurant_id', $restaurantIds)->count(),
+            'total_reviews' => $totalReviews,
+            'average_rating' => round($avgRating, 1),
+            'total_reservations' => $totalReservations,
         ]);
     }
 }

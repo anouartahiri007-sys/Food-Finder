@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Clock, MapPin, Phone, Star, Utensils, ChevronRight } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
 
 const MenuPage = () => {
+    const { t } = useTranslation();
     const { id } = useParams();
     const [restaurant, setRestaurant] = useState(null);
     const [menus, setMenus] = useState([]);
@@ -22,14 +24,14 @@ const MenuPage = () => {
                 setRestaurant(restaurantRes.data);
                 setMenus(menusRes.data);
             } catch (err) {
-                setError('Impossible de charger le menu.');
-                toast.error('Erreur de chargement');
+                setError(t('restaurant.load_error'));
+                toast.error(t('common.load_error'));
             } finally {
                 setLoading(false);
             }
         };
         fetchData();
-    }, [id]);
+    }, [id, t]);
 
     // Get all categories from menus
     const categories = [...new Set(menus.flatMap(menu => 
@@ -58,7 +60,7 @@ const MenuPage = () => {
                 marginBottom: '1.5rem',
                 fontWeight: '500'
             }}>
-                <ArrowLeft size={18} /> Retour au restaurant
+                <ArrowLeft size={18} /> {t('menu.back_to_restaurant')}
             </Link>
 
             {restaurant && (
@@ -75,7 +77,7 @@ const MenuPage = () => {
                             <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem' }}>{restaurant.name}</h1>
                             <div style={{ display: 'flex', gap: '1rem', fontSize: '0.9rem', opacity: 0.9 }}>
                                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                    <Star size={14} fill="currentColor" /> {restaurant.rating || 'Nouveau'}
+                                    <Star size={14} fill="currentColor" /> {restaurant.rating || t('restaurant.new')}
                                 </span>
                                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                                     <MapPin size={14} /> {restaurant.address}
@@ -102,7 +104,7 @@ const MenuPage = () => {
                             transition: 'all 0.2s ease'
                         }}
                     >
-                        Tout
+                        {t('common.filters')}
                     </button>
                     {categories.map(category => (
                         <button
@@ -129,8 +131,8 @@ const MenuPage = () => {
             {menus.length === 0 ? (
                 <div className="card" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
                     <Utensils size={48} style={{ color: 'var(--text-muted)', opacity: 0.3, marginBottom: '1rem' }} />
-                    <h3 style={{ color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Menu non disponible</h3>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Le restaurant n'a pas encore publié son menu.</p>
+                    <h3 style={{ color: 'var(--text-muted)', marginBottom: '0.5rem' }}>{t('menu.menu_unavailable')}</h3>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{t('menu.menu_unavailable_desc')}</p>
                 </div>
             ) : (
                 <div className="menu-sections">
@@ -218,7 +220,7 @@ const MenuPage = () => {
             {/* Back to restaurant */}
             <div style={{ textAlign: 'center', marginTop: '2rem' }}>
                 <Link to={`/restaurants/${id}`} className="btn btn-primary">
-                    Voir les détails du restaurant
+                    {t('menu.see_restaurant_details')}
                 </Link>
             </div>
         </div>

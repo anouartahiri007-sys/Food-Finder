@@ -18,6 +18,8 @@ const AdminDashboard = () => {
     const [clients, setClients] = useState([]);
     const [restaurants, setRestaurants] = useState([]);
     const [blacklistedUsers, setBlacklistedUsers] = useState([]);
+    const [reports, setReports] = useState([]);
+    const [stats, setStats] = useState({});
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('clients');
     const [searchTerm, setSearchTerm] = useState('');
@@ -31,14 +33,18 @@ const AdminDashboard = () => {
                     return;
                 }
 
-                const clientsRes = await api.get('/admin/users');
+                const [clientsRes, resRes, blacklistRes, reportsRes, statsRes] = await Promise.all([
+                    api.get('/admin/users'),
+                    api.get('/admin/restaurants'),
+                    api.get('/admin/blacklist'),
+                    api.get('/admin/reports'),
+                    api.get('/admin/stats'),
+                ]);
                 setClients(clientsRes.data);
-
-                const resRes = await api.get('/admin/restaurants');
                 setRestaurants(resRes.data);
-
-                const blacklistRes = await api.get('/admin/blacklist');
                 setBlacklistedUsers(blacklistRes.data);
+                setReports(reportsRes.data);
+                setStats(statsRes.data);
             } catch (err) {
                 console.error(err);
                 toast.error('Erreur de chargement des données');
@@ -196,12 +202,12 @@ const AdminDashboard = () => {
                     <div style={{ fontSize: '0.85rem', color: '#10b981', marginTop: '0.5rem' }}>+5 nouveaux cette semaine</div>
                 </div>
                 <div className="card" style={{ padding: '1.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}> 
-                        <span style={{ color: 'var(--text-muted)', fontWeight: '600' }}>Connexions Aujourd'hui</span> 
-                        <Clock size={20} color="#f59e0b" /> 
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                        <span style={{ color: 'var(--text-muted)', fontWeight: '600' }}>Signalements en attente</span>
+                        <Clock size={20} color="#f59e0b" />
                     </div>
-                    <h2 style={{ fontSize: '2rem', fontWeight: '800' }}>42</h2>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Pic à 12:45</div>
+                    <h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{stats.pending_reports ?? '-'}</h2>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Avis signalés</div>
                 </div>
             </div>
 
@@ -360,13 +366,51 @@ const AdminDashboard = () => {
                                     </tr>
                                 )
                             ) : activeTab === 'reports' ? (
-                                <tr>
-                                    <td colSpan="5" style={{ padding: '4rem', textAlign: 'center' }}>
-                                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🚩</div> 
-                                        <h3 style={{ marginBottom: '0.5rem' }}>Gestion des Signalements</h3> 
-                                        <p style={{ color: 'var(--text-muted)' }}>La liste des avis signalés sera affichée ici après validation.</p> 
-                                    </td> 
-                                </tr>
+                                reports.length > 0 ? (
+                                    reports.map(report => (
+                                        <tr key={report.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                            <td style={{ padding: '1.2rem' }}>
+                                                <span style={{ fontWeight: '600', color: 'var(--danger)' }}>#{report.id}</span>
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{report.reason || 'Sans motif'}</div>
+                                            </td>
+                                            <td style={{ padding: '1.2rem', maxWidth: '250px' }}>
+                                                <p style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.9rem' }}>
+                                                    {report.review?.comment || '-'}
+                                                </p>
+                                            </td>
+                                            <td style={{ padding: '1.2rem' }}>{report.review?.restaurant?.name || '-'}</td>
+                                            <td style={{ padding: '1.2rem' }}>{formatDate(report.created_at)}</td>
+                                            <td style={{ padding: '1.2rem' }}>
+                                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                    <button
+                                                        className="btn btn-secondary"
+                                                        style={{ color: 'var(--danger)', padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
+                                                        onClick={async () => {
+                                                            await api.post(`/admin/reviews/${report.review_id}/moderate`, { action: 'delete' });
+                                                            setReports(reports.filter(r => r.id !== report.id));
+                                                            toast.success('Avis supprimé');
+                                                        }}
+                                                    >Supprimer</button>
+                                                    <button
+                                                        className="btn btn-secondary"
+                                                        style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
+                                                        onClick={async () => {
+                                                            await api.post(`/admin/reviews/${report.review_id}/moderate`, { action: 'keep' });
+                                                            setReports(reports.filter(r => r.id !== report.id));
+                                                            toast.success('Avis conservé');
+                                                        }}
+                                                    >Conserver</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="5" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                            Aucun signalement pour le moment.
+                                        </td>
+                                    </tr>
+                                )
                             ) : activeTab === 'blacklist' ? (
                                 blacklistedUsers.length > 0 ? (
                                     blacklistedUsers.map(user => (
@@ -414,13 +458,12 @@ const AdminDashboard = () => {
                                 )
                             ) : (
                                 <tr>
-                                    <td colSpan="5" style={{ padding: '4rem', textAlign: 'center' }}>
-                                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🚩</div> 
-                                        <h3 style={{ marginBottom: '0.5rem' }}>Gestion des Signalements</h3> 
-                                        <p style={{ color: 'var(--text-muted)' }}>La liste des avis signalés sera affichée ici après validation.</p> 
-                                    </td> 
+                                    <td colSpan="5" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                        Aucune donnée disponible.
+                                    </td>
                                 </tr>
                             )}
+
                         </tbody>
                     </table>
                 </div>

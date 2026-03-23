@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { MapPin, Clock, Phone, Globe, Star, Utensils, ArrowLeft, Send, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, Clock, Phone, Globe, Star, Utensils, ArrowLeft, Send, ChevronLeft, ChevronRight, Flag, Trash2, Sparkles } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
 import ReservationModal from '../components/Reservations/ReservationModal';
 
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api').replace('/api', '');
+
 // Default placeholder image
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800';
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api').replace('/api', '');
 
 // Helper to get full image URL
 const getFullImageUrl = (url) => {
@@ -17,41 +19,8 @@ const getFullImageUrl = (url) => {
     return `${API_BASE_URL}${prefix}${url}`;
 };
 
-// Fake reviews data
-const FAKE_REVIEWS = [
-    {
-        id: 1,
-        user: { name: 'Ahmed B.' },
-        rating: 5,
-        comment: 'Excellent restaurant ! La cuisine est délicieuse et le service est impeccable. Je recommande fortement le tajine royal.'
-    },
-    {
-        id: 2,
-        user: { name: 'Sara L.' },
-        rating: 4,
-        comment: 'Très bon endroit pour manger en famille. L\'ambiance est chaleureuse et les prix sont raisonnable. Le couscous est excellent.'
-    },
-    {
-        id: 3,
-        user: { name: 'Mohamed R.' },
-        rating: 5,
-        comment: 'Une expérience culinaire exceptionnelle. Le poisson grillé était parfaitement préparé. Personnel très accueillant.'
-    },
-    {
-        id: 4,
-        user: { name: 'Fatima E.' },
-        rating: 4,
-        comment: 'Bel endroit, propres et bien situé. Les pâtisseries marocaines sont à tester absolument !'
-    },
-    {
-        id: 5,
-        user: { name: 'Youssef K.' },
-        rating: 5,
-        comment: 'Mon restaurant préféré à Casablanca ! La qualité des ingrédients est remarquable. Réservation recommandée le weekend.'
-    }
-];
-
 const RestaurantDetail = () => {
+    const { t } = useTranslation();
     const { id } = useParams();
     const navigate = useNavigate();
     const [restaurant, setRestaurant] = useState(null);
@@ -64,6 +33,14 @@ const RestaurantDetail = () => {
     const [submittingReview, setSubmittingReview] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [imageError, setImageError] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [reportReason, setReportReason] = useState('');
+    const [selectedReviewId, setSelectedReviewId] = useState(null);
+    const [generatingReviews, setGeneratingReviews] = useState(false);
+
+    // Get current user
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const isRestaurantOwner = currentUser?.role === 'owner' && restaurant?.user_id === currentUser?.id;
 
     useEffect(() => {
         const fetchRestaurant = async () => {
@@ -71,8 +48,8 @@ const RestaurantDetail = () => {
                 const response = await api.get(`/restaurants/${id}`);
                 setRestaurant(response.data);
             } catch (err) {
-                setError('Impossible de charger les détails du restaurant.');
-                toast.error('Erreur de chargement');
+                setError(t('restaurant.load_error', 'Impossible de charger les détails du restaurant.'));
+                toast.error(t('common.load_error', 'Erreur de chargement'));
             } finally {
                 setLoading(false);
             }
@@ -114,7 +91,7 @@ const RestaurantDetail = () => {
         try {
             const token = localStorage.getItem('token');
             if (!token) {
-                toast.error('Veuillez vous connecter pour laisser un avis');
+                toast.error(t('auth.login_required', 'Veuillez vous connecter pour laisser un avis'));
                 setSubmittingReview(false);
                 return;
             }
@@ -132,11 +109,99 @@ const RestaurantDetail = () => {
         }
     };
 
-    // Combine real reviews with fake reviews
+    // Generate dynamic reviews
+    const handleGenerateDynamicReviews = async () => {
+        setGeneratingReviews(true);
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                toast.error(t('auth.login_required', 'Veuillez vous connecter pour générer des avis'));
+                setGeneratingReviews(false);
+                return;
+            }
+            
+            await api.post(`/restaurants/${id}/reviews/generate`);
+            toast.success('Avis dynamiques générés avec succès !');
+            const response = await api.get(`/restaurants/${id}`);
+            setRestaurant(response.data);
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Erreur lors de la génération des avis');
+        } finally {
+            setGeneratingReviews(false);
+        }
+    };
+
+    // Handle report submission
+    const handleReportSubmit = async () => {
+        if (!reportReason.trim()) {
+            toast.error('Veuillez sélectionner une raison');
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                toast.error(t('auth.login_required', 'Veuillez vous connecter pour signaler un avis'));
+                setShowReportModal(false);
+                return;
+            }
+
+            const response = await api.post(`/reviews/${selectedReviewId}/report`, { 
+                reason: reportReason 
+            });
+            
+            if (response.data.user_blocked) {
+                toast.error('Votre compte a été bloqué pour non-respect des règles de notre site.');
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                setTimeout(() => navigate('/login'), 2000);
+            } else if (response.data.review_deleted) {
+                toast.success(t('restaurant.review_deleted', 'Commentaire signalé et supprimé pour contenu inapproprié.'));
+                const response = await api.get(`/restaurants/${id}`);
+                setRestaurant(response.data);
+            } else {
+                toast.success(t('restaurant.review_reported', 'Avis signalé ! Merci pour votre vigilance.'));
+            }
+            
+            setShowReportModal(false);
+            setReportReason('');
+            setSelectedReviewId(null);
+        } catch (err) {
+            if (err.response?.data?.user_blocked) {
+                toast.error('Votre compte a été bloqué pour non-respect des règles de notre site.');
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                setTimeout(() => navigate('/login'), 2000);
+            } else {
+                toast.error(err.response?.data?.message || 'Erreur lors du signalement');
+            }
+        }
+    };
+
+    // Open report modal
+    const openReportModal = (reviewId) => {
+        setSelectedReviewId(reviewId);
+        setShowReportModal(true);
+    };
+
+    // Delete review (owner or self)
+    const handleDeleteReview = async (reviewId) => {
+        if (!window.confirm('Supprimer cet avis ?')) return;
+        
+        try {
+            await api.delete(`/reviews/${reviewId}`);
+            const response = await api.get(`/restaurants/${id}`);
+            setRestaurant(response.data);
+            toast.success('Avis supprimé.');
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Erreur lors de la suppression.');
+        }
+    };
+
+    // Get real reviews from API
     const getDisplayReviews = () => {
-        if (!restaurant) return FAKE_REVIEWS;
-        const realReviews = restaurant.reviews || [];
-        return [...realReviews, ...FAKE_REVIEWS].slice(0, 5);
+        if (!restaurant) return [];
+        return restaurant.reviews || [];
     };
 
     if (loading) return <div className="loader-container"><div className="loader"></div></div>;
@@ -343,7 +408,7 @@ const RestaurantDetail = () => {
                         <div className="card menu-preview">
                             <h3>Menu</h3>
                             <p>Venez découvrir nos spécialités faites maison.</p>
-                            <Link to={`/restaurants/${id}/menu`} className="btn btn-secondary full-width">Voir le menu complet</Link>
+                            <Link to={`/restaurants/${id}/menu`} className="btn btn-secondary full_width">Voir le menu complet</Link>
                         </div>
 
                         <div className="card map-preview">
@@ -363,16 +428,28 @@ const RestaurantDetail = () => {
                         </div>
 
                         <section style={{ marginTop: '2rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                                 <h3>Avis des clients</h3>
-                                <button 
-                                    onClick={() => setShowReviewForm(!showReviewForm)}
-                                    className="btn btn-secondary"
-                                    style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
-                                >
-                                    <Star size={16} style={{ marginRight: '0.3rem' }} />
-                                    {showReviewForm ? 'Annuler' : 'Laisser un avis'}
-                                </button>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <button 
+                                        onClick={handleGenerateDynamicReviews}
+                                        className="btn btn-secondary"
+                                        disabled={generatingReviews}
+                                        style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+                                        title="Générer des avis dynamiques"
+                                    >
+                                        <Sparkles size={16} style={{ marginRight: '0.3rem' }} />
+                                        {generatingReviews ? 'Génération...' : 'Générer'}
+                                    </button>
+                                    <button 
+                                        onClick={() => setShowReviewForm(!showReviewForm)}
+                                        className="btn btn-secondary"
+                                        style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+                                    >
+                                        <Star size={16} style={{ marginRight: '0.3rem' }} />
+                                        {showReviewForm ? 'Annuler' : 'Laisser un avis'}
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Review Form */}
@@ -427,23 +504,41 @@ const RestaurantDetail = () => {
                             {/* Reviews List */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
                                 {displayReviews.length > 0 ? (
-                                    displayReviews.map((review, index) => (
-                                        <div key={`review-${review.id || index}-${index}`} className="card" style={{ padding: '1rem', position: 'relative' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <strong>{review.user?.name || 'Anonyme'}</strong>
-                                                <div style={{ color: '#f59e0b', fontSize: '0.9rem' }}>
-                                                    {Array(review.rating).fill('★').join('')}
+                                    displayReviews.map((review, index) => {
+                                        const isOwner = currentUser && review.user_id === currentUser.id;
+                                        return (
+                                            <div key={`review-${review.id || index}`} className="card" style={{ padding: '1rem', position: 'relative' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.9rem' }}>
+                                                            {(review.user?.name || 'A')[0].toUpperCase()}
+                                                        </div>
+                                                        <strong>{review.user?.name || 'Anonyme'}</strong>
+                                                    </div>
+                                                    <div style={{ color: '#f59e0b', fontSize: '0.9rem', letterSpacing: '2px' }}>
+                                                        {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
+                                                    </div>
+                                                </div>
+                                                <p style={{ margin: '0.75rem 0 0.5rem', fontSize: '0.9rem', lineHeight: '1.6', color: 'var(--text-main)' }}>{review.comment}</p>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
+                                                    <button
+                                                        style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.75rem', cursor: 'pointer', padding: '0', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                                                        onClick={() => openReportModal(review.id)}
+                                                    >
+                                                        <Flag size={14} /> Signaler
+                                                    </button>
+                                                    {(isOwner || isRestaurantOwner) && (
+                                                        <button
+                                                            style={{ background: 'none', border: 'none', color: 'var(--danger)', fontSize: '0.75rem', cursor: 'pointer', padding: '0', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                                                            onClick={() => handleDeleteReview(review.id)}
+                                                        >
+                                                            <Trash2 size={14} /> Supprimer
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </div>
-                                            <p style={{ margin: '0.5rem 0', fontSize: '0.9rem', lineHeight: '1.5' }}>{review.comment}</p>
-                                            <button 
-                                                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.75rem', cursor: 'pointer', padding: '0', textAlign: 'left' }}
-                                                onClick={() => toast.info('Avis signalé ! Merci pour votre vigilance.')}
-                                            >
-                                                Signaler cet avis
-                                            </button>
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 ) : (
                                     <p style={{ color: 'var(--text-muted)' }}>Aucun avis pour le moment. Soyez le premier !</p>
                                 )}
@@ -462,6 +557,56 @@ const RestaurantDetail = () => {
                         setTimeout(() => setReservationSuccess(false), 5000);
                     }}
                 />
+            )}
+
+            {/* Report Modal */}
+            {showReportModal && (
+                <div className="modal-overlay" onClick={() => setShowReportModal(false)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+                        <div className="card" style={{ padding: '1.5rem' }}>
+                            <h3 style={{ marginBottom: '1rem' }}>Signaler ce commentaire</h3>
+                            <p style={{ marginBottom: '1rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                                Pourquoi signalez-vous ce commentaire ?
+                            </p>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                                {[
+                                    'Contenu inapproprié',
+                                    'Langage offensant',
+                                    'Spam ou publicité',
+                                    'Information fausse',
+                                    'Autre raison'
+                                ].map((reason) => (
+                                    <label key={reason} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                        <input 
+                                            type="radio" 
+                                            name="reportReason" 
+                                            value={reason}
+                                            checked={reportReason === reason}
+                                            onChange={(e) => setReportReason(e.target.value)}
+                                        />
+                                        {reason}
+                                    </label>
+                                ))}
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                <button 
+                                    className="btn btn-secondary" 
+                                    onClick={() => setShowReportModal(false)}
+                                    style={{ flex: 1 }}
+                                >
+                                    Annuler
+                                </button>
+                                <button 
+                                    className="btn btn-primary" 
+                                    onClick={handleReportSubmit}
+                                    style={{ flex: 1 }}
+                                >
+                                    Signaler
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

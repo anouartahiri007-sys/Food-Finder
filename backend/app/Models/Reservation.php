@@ -16,6 +16,7 @@ class Reservation extends Model
         'reservation_time',
         'guests_count',
         'status',
+        'notes',
     ];
 
     public function user()

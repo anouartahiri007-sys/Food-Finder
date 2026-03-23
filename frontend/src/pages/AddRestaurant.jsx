@@ -77,8 +77,8 @@ const AddRestaurant = () => {
             }
         });
         // Append multiple images
-        images.forEach((img, index) => {
-            data.append(`images[${index}]`, img);
+        images.forEach((img) => {
+            data.append('images[]', img);
         });
 
         try {

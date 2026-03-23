@@ -24,6 +24,9 @@ class MenuItemController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'price' => 'required|numeric',
+            'menu_id' => 'nullable|exists:menus,id',
+            'category' => 'nullable|string',
+            'description' => 'nullable|string',
         ]);
 
         $restaurant = Restaurant::findOrFail($restaurantId);
@@ -32,7 +35,14 @@ class MenuItemController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $menuItem = $restaurant->menuItems()->create($request->all());
+        $menuItem = MenuItem::create([
+            'restaurant_id' => $restaurantId,
+            'menu_id' => $request->menu_id,
+            'name' => $request->name,
+            'description' => $request->description,
+            'price' => $request->price,
+            'category' => $request->category,
+        ]);
 
         return response()->json($menuItem, 201);
     }

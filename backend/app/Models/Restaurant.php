@@ -19,6 +19,7 @@ class Restaurant extends Model
         'opening_time',
         'closing_time',
         'website',
+        'phone',
         'rating',
         'image_url',
         'average_price',

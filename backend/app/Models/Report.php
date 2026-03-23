@@ -12,7 +12,15 @@ class Report extends Model
         'reason',
         'description',
         'status',
+        'report_date',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'report_date' => 'datetime',
+        ];
+    }
 
     public function user()
     {

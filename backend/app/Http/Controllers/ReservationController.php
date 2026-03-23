@@ -23,6 +23,7 @@ class ReservationController extends Controller
             'reservation_date' => 'required|date|after_or_equal:today',
             'reservation_time' => 'required',
             'guests_count' => 'required|integer|min:1',
+            'notes' => 'nullable|string|max:500',
         ]);
 
         $restaurant = Restaurant::findOrFail($restaurantId);
@@ -33,6 +34,7 @@ class ReservationController extends Controller
             'reservation_date' => $request->reservation_date,
             'reservation_time' => $request->reservation_time,
             'guests_count' => $request->guests_count,
+            'notes' => $request->notes,
             'status' => 'pending',
         ]);
 

@@ -31,16 +31,17 @@ class AdminController extends Controller
             'restaurants_count' => Restaurant::count(),
             'reviews_count' => Review::count(),
             'pending_reports' => Report::where('status', 'pending')->count(),
+            'blocked_users' => User::where('is_blocked', true)->count(),
         ]);
     }
 
     /**
-     * List all users (excluding blocked).
+     * List ALL users (including blocked).
      */
     public function users()
     {
         $this->checkAdmin();
-        return response()->json(User::where('is_blocked', false)->latest()->get());
+        return response()->json(User::latest()->get());
     }
 
     /**
@@ -67,6 +68,7 @@ class AdminController extends Controller
      */
     public function toggleUserStatus(User $user)
     {
+        $this->checkAdmin();
         $user->update(['is_blocked' => !$user->is_blocked]);
         return response()->json(['message' => 'User status updated', 'is_blocked' => $user->is_blocked]);
     }
@@ -87,7 +89,7 @@ class AdminController extends Controller
     {
         $this->checkAdmin();
         $user->update(['is_blocked' => true]);
-        return response()->json(['message' => 'User added to blacklist']);
+        return response()->json(['message' => 'User added to blacklist', 'user' => $user]);
     }
 
     /**
@@ -97,7 +99,7 @@ class AdminController extends Controller
     {
         $this->checkAdmin();
         $user->update(['is_blocked' => false]);
-        return response()->json(['message' => 'User removed from blacklist']);
+        return response()->json(['message' => 'User removed from blacklist', 'user' => $user]);
     }
 
     /**
@@ -109,7 +111,14 @@ class AdminController extends Controller
         $request->validate(['action' => 'required|in:keep,delete']);
 
         if ($request->action === 'delete') {
+            $restaurantId = $review->restaurant_id;
             $review->delete();
+            // Recalculate restaurant rating
+            $restaurant = Restaurant::find($restaurantId);
+            if ($restaurant) {
+                $avgRating = $restaurant->reviews()->avg('rating');
+                $restaurant->update(['rating' => $avgRating ? round($avgRating, 1) : null]);
+            }
             return response()->json(['message' => 'Review deleted']);
         }
 

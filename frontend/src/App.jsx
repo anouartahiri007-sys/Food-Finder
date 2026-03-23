@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { Utensils, Globe } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Utensils, Globe, ChevronDown } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import api from './api/axios';
 // ... rest of imports
@@ -25,17 +25,71 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 
+// Language flags
+const languages = [
+  { code: 'fr', name: 'Français', flag: '🇫🇷' },
+  { code: 'ar', name: 'العربية', flag: '🇲🇦' },
+  { code: 'en', name: 'English', flag: '🇬🇧' },
+  { code: 'ru', name: 'Русский', flag: '🇷🇺' },
+  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+];
+
 function App() {
   const [user, setUser] = useState(null);
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   const { t, i18n } = useTranslation();
+  const [showLangDropdown, setShowLangDropdown] = useState(false);
+  const [headerVisible, setHeaderVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const langDropdownRef = useRef(null);
 
   const currentLanguage = i18n.language;
+  const currentLang = languages.find(l => l.code === currentLanguage) || languages[0];
+
+  // Load saved language preference on mount
+  useEffect(() => {
+    const savedLang = localStorage.getItem('i18nextLng');
+    if (savedLang && languages.some(l => l.code === savedLang)) {
+      i18n.changeLanguage(savedLang);
+    }
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  // Handle scroll for sticky header
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        // Scrolling down - hide header
+        setHeaderVisible(false);
+      } else {
+        // Scrolling up - show header
+        setHeaderVisible(true);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
+  // Close language dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (langDropdownRef.current && !langDropdownRef.current.contains(event.target)) {
+        setShowLangDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const toggleTheme = () => {
     setTheme(theme === 'light' ? 'dark' : 'light');
@@ -43,6 +97,7 @@ function App() {
 
   const changeLanguage = (lng) => {
     i18n.changeLanguage(lng);
+    setShowLangDropdown(false);
   };
 
   useEffect(() => {
@@ -76,39 +131,93 @@ function App() {
   return (
     <Router>
       <div className={`app-container ${theme}-mode`} dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}>
-        <header>
+        <header className={headerVisible ? 'header-visible' : 'header-hidden'}>
           <Link to="/" className="brand">
             <Utensils size={28} />
             Food Finder
           </Link>
           <nav className="nav-links">
-            {/* Language Switcher */}
-            <div className="language-switcher" style={{ display: 'flex', gap: '0.4rem', marginRight: '1rem', borderRight: '1px solid var(--border-color)', paddingRight: '1rem' }}>
+            {/* Language Switcher with Dropdown */}
+            <div className="language-switcher" ref={langDropdownRef} style={{ position: 'relative' }}>
               <button 
-                onClick={() => changeLanguage('fr')} 
-                className={`btn-icon ${currentLanguage === 'fr' ? 'active' : ''}`}
-                style={{ fontSize: '0.7rem', fontWeight: currentLanguage === 'fr' ? '800' : '400', padding: '4px' }}
+                onClick={() => setShowLangDropdown(!showLangDropdown)}
+                className="btn-icon language-btn"
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '0.25rem',
+                  padding: '0.4rem 0.5rem',
+                  borderRadius: '6px',
+                  background: 'var(--card-bg)',
+                  border: '1px solid var(--border-color)',
+                  minWidth: '40px',
+                  justifyContent: 'center'
+                }}
+                title="Changer de langue"
               >
-                FR
+                <Globe size={16} style={{ color: 'var(--text-muted)' }} />
               </button>
-              <button 
-                onClick={() => changeLanguage('en')} 
-                className={`btn-icon ${currentLanguage === 'en' ? 'active' : ''}`}
-                style={{ fontSize: '0.7rem', fontWeight: currentLanguage === 'en' ? '800' : '400', padding: '4px' }}
-              >
-                EN
-              </button>
-              <button 
-                onClick={() => changeLanguage('ar')} 
-                className={`btn-icon ${currentLanguage === 'ar' ? 'active' : ''}`}
-                style={{ fontSize: '0.7rem', fontWeight: currentLanguage === 'ar' ? '800' : '400', padding: '4px' }}
-              >
-                AR
-              </button>
+              
+              {showLangDropdown && (
+                <div className="language-dropdown" style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: 0,
+                  marginTop: '0.5rem',
+                  background: 'var(--card-bg)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '12px',
+                  boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
+                  overflow: 'hidden',
+                  zIndex: 1000,
+                  minWidth: '180px'
+                }}>
+                  {languages.map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => changeLanguage(lang.code)}
+                      className={`language-option ${currentLanguage === lang.code ? 'active' : ''}`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        width: '100%',
+                        padding: '0.6rem 1rem',
+                        border: 'none',
+                        background: currentLanguage === lang.code ? 'var(--primary)' : 'transparent',
+                        color: currentLanguage === lang.code ? 'white' : 'var(--text-main)',
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        transition: 'all 0.2s ease',
+                        textAlign: 'left'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (currentLanguage !== lang.code) {
+                          e.currentTarget.style.background = 'var(--border-color)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (currentLanguage !== lang.code) {
+                          e.currentTarget.style.background = 'transparent';
+                        }
+                      }}
+                    >
+                      <span style={{ fontSize: '1.1rem' }}>{lang.flag}</span>
+                      <span style={{ fontWeight: currentLanguage === lang.code ? '600' : '400' }}>{lang.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <button onClick={toggleTheme} className="btn-icon">
-              {theme === 'light' ? '🌙' : '☀️'}
+            <button onClick={toggleTheme} className="btn-icon" title={theme === 'light' ? 'Mode sombre' : 'Mode clair'}>
+              <span style={{ 
+                fontSize: '1.3rem',
+                filter: theme === 'light' ? 'brightness(0.7)' : 'brightness(1)',
+                transition: 'all 0.2s ease'
+              }}>
+                {theme === 'light' ? '🌙' : '☀️'}
+              </span>
             </button>
             <Link to="/" className="nav-item">{t('nav.home')}</Link>
             {user ? (
@@ -181,4 +290,3 @@ function App() {
 }
 
 export default App;
-

@@ -14,7 +14,17 @@ class MenuController extends Controller
     public function index($restaurantId)
     {
         $restaurant = Restaurant::findOrFail($restaurantId);
-        return response()->json($restaurant->menus()->with('items')->get());
+        $menus = $restaurant->menus()->with('items')->get();
+        // Transform to include menu_items for frontend compatibility
+        return response()->json($menus->map(function ($menu) {
+            return [
+                'id' => $menu->id,
+                'restaurant_id' => $menu->restaurant_id,
+                'name' => $menu->name,
+                'description' => $menu->description,
+                'menu_items' => $menu->items
+            ];
+        }));
     }
 
     /**

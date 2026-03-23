@@ -47,6 +47,73 @@ html, body {
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
   --border-color: #334155;
+  /* Enhanced dark mode colors */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+}
+
+/* Dark mode specific overrides */
+[data-theme='dark'] body {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+}
+
+[data-theme='dark'] .card {
+  background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+  border: 1px solid #334155;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme='dark'] .input-base {
+  background: #0f172a;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .input-base:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(240, 90, 40, 0.3);
+}
+
+[data-theme='dark'] header {
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border-bottom: 1px solid #334155;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme='dark'] .brand {
+  color: var(--primary);
+  text-shadow: 0 0 10px rgba(240, 90, 40, 0.3);
+}
+
+[data-theme='dark'] .nav-item {
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .nav-item:hover {
+  color: var(--primary);
+}
+
+[data-theme='dark'] .btn-secondary {
+  background: transparent;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .btn-secondary:hover {
+  background: #334155;
+  border-color: #475569;
+}
+
+[data-theme='dark'] .badge-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #f8fafc;
+}
+
+[data-theme='dark'] footer {
+  background: linear-gradient(180deg, #020617 0%, #0f172a 100%);
+  border-top: 1px solid #334155;
 }
 
 header {
@@ -57,9 +124,22 @@ header {
   background-color: var(--card-bg);
   border-bottom: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 100;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  transition: transform 0.3s ease, background-color 0.3s ease;
+}
+
+header.header-hidden {
+  transform: translateY(-100%);
+  position: fixed;
+  width: 100%;
+}
+
+header.header-visible {
+  transform: translateY(0);
 }
 
 .brand {
@@ -244,6 +324,7 @@ a:hover {
   flex: 1;
   display: flex;
   flex-direction: column;
+  padding-top: 80px; /* Account for fixed header */
 }
 
 /* Button Base Styles */
@@ -371,7 +452,6 @@ a:hover {
 .badge-secondary {
   background: rgba(255, 255, 255, 0.2);
   color: white;
-  backdrop-filter: blur(4px);
 }
 
 .badge-success {
@@ -454,7 +534,6 @@ a:hover {
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
   display: flex;
   justify-content: center;
   align-items: center;
