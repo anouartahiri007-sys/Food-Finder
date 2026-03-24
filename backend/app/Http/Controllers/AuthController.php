@@ -122,7 +122,7 @@ class AuthController extends Controller
 
         if ($user->is_blocked) {
             return response()->json([
-                'message' => 'Votre compte a été bloqué car vous n\'avez pas respecté l\'une des conditions d\'utilisation de la plateforme.',
+                'message' => 'Votre compte a été bloqué pour non-respect des règles de notre site.',
                 'blocked' => true
             ], 403);
         }

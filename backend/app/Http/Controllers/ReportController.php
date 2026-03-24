@@ -52,7 +52,7 @@ class ReportController extends Controller
         // Check if review has been reported more than 10 times
         $reportCount = Report::where('review_id', $reviewId)->count();
 
-        if ($reportCount > 10) {
+        if ($reportCount >= 10) {
             // Delete the review and add to flagged list
             $reviewData = [
                 'content' => $review->comment,

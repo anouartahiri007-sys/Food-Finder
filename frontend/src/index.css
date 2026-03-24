@@ -116,6 +116,68 @@ html, body {
   border-top: 1px solid #334155;
 }
 
+[data-theme='dark'] .social-btn {
+  background: #1e293b;
+  border: 1px solid #334155;
+}
+
+[data-theme='dark'] .social-btn:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+[data-theme='dark'] .language-option {
+  background: transparent;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .language-option:hover {
+  background: #334155;
+}
+
+[data-theme='dark'] .language-dropdown {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+[data-theme='dark'] input[type="email"] {
+  background: #0f172a;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] input[type="email"]:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(240, 90, 40, 0.3);
+}
+
+[data-theme='dark'] .modal-overlay {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+[data-theme='dark'] .modal-content {
+  background: #1e293b;
+  border: 1px solid #334155;
+}
+
+[data-theme='dark'] .alert-success {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #10b981;
+  color: #10b981;
+}
+
+[data-theme='dark'] .alert-danger {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+[data-theme='dark'] select {
+  background: #0f172a;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
 header {
   display: flex;
   justify-content: space-between;

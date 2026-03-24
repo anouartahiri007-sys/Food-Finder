@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { MapPin, Clock, Phone, Globe, Star, Utensils, ArrowLeft, Send, ChevronLeft, ChevronRight, Flag, Trash2, Sparkles } from 'lucide-react';
+import { MapPin, Clock, Phone, Globe, Star, Utensils, ArrowLeft, Send, ChevronLeft, ChevronRight, Flag, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
@@ -36,7 +36,6 @@ const RestaurantDetail = () => {
     const [showReportModal, setShowReportModal] = useState(false);
     const [reportReason, setReportReason] = useState('');
     const [selectedReviewId, setSelectedReviewId] = useState(null);
-    const [generatingReviews, setGeneratingReviews] = useState(false);
 
     // Get current user
     const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -109,26 +108,10 @@ const RestaurantDetail = () => {
         }
     };
 
-    // Generate dynamic reviews
+    // Placeholder for dynamic reviews - functionality removed
     const handleGenerateDynamicReviews = async () => {
-        setGeneratingReviews(true);
-        try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                toast.error(t('auth.login_required', 'Veuillez vous connecter pour générer des avis'));
-                setGeneratingReviews(false);
-                return;
-            }
-            
-            await api.post(`/restaurants/${id}/reviews/generate`);
-            toast.success('Avis dynamiques générés avec succès !');
-            const response = await api.get(`/restaurants/${id}`);
-            setRestaurant(response.data);
-        } catch (err) {
-            toast.error(err.response?.data?.message || 'Erreur lors de la génération des avis');
-        } finally {
-            setGeneratingReviews(false);
-        }
+        // This function is kept as placeholder but does nothing
+        // Dynamic reviews feature has been removed
     };
 
     // Handle report submission
@@ -431,16 +414,6 @@ const RestaurantDetail = () => {
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                                 <h3>Avis des clients</h3>
                                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                    <button 
-                                        onClick={handleGenerateDynamicReviews}
-                                        className="btn btn-secondary"
-                                        disabled={generatingReviews}
-                                        style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
-                                        title="Générer des avis dynamiques"
-                                    >
-                                        <Sparkles size={16} style={{ marginRight: '0.3rem' }} />
-                                        {generatingReviews ? 'Génération...' : 'Générer'}
-                                    </button>
                                     <button 
                                         onClick={() => setShowReviewForm(!showReviewForm)}
                                         className="btn btn-secondary"

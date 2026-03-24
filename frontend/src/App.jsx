@@ -155,7 +155,7 @@ function App() {
                 }}
                 title="Changer de langue"
               >
-                <Globe size={16} style={{ color: 'var(--text-muted)' }} />
+                <span style={{ fontSize: '1.1rem' }}>{currentLang.flag}</span>
               </button>
               
               {showLangDropdown && (

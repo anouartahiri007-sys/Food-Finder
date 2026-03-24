@@ -46,4 +46,19 @@ class MenuItemController extends Controller
 
         return response()->json($menuItem, 201);
     }
+
+    /**
+     * Remove the specified menu item.
+     */
+    public function destroy(MenuItem $menuItem)
+    {
+        // Check ownership through restaurant
+        $restaurant = Restaurant::findOrFail($menuItem->restaurant_id);
+        if ($restaurant->user_id !== auth()->id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+        
+        $menuItem->delete();
+        return response()->json(['message' => 'Menu item deleted']);
+    }
 }

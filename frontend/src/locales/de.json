@@ -150,9 +150,12 @@
   "admin": {
     "audit_restaurants": "Audit des Restaurants",
     "search": "Rechercher...",
-    "no_result": "Aucun restaurant trouvé",
-    "new_this_week": "+5 nouveaux cette semaine",
-    "restaurant_deleted": "Restaurant supprimé avec succès"
+    "no_result": "Kein Restaurant gefunden",
+    "new_this_week": "+5 neu diese Woche",
+    "results_found": "{{count}} Restaurant gefunden",
+    "results_found_plural": "{{count}} Restaurants gefunden",
+    "filters": "Filter",
+    "restaurant_deleted": "Restaurant erfolgreich gelöscht"
   },
   "add_restaurant": {
     "restaurant_name": "Nom du restaurant *",

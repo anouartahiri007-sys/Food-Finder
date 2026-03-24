@@ -152,6 +152,9 @@
     "search": "Поиск...",
     "no_result": "Ресторан не найден",
     "new_this_week": "+5 новых на этой неделе",
+    "results_found": "{{count}} ресторан найден",
+    "results_found_plural": "{{count}} ресторанов найдено",
+    "filters": "Фильтры",
     "restaurant_deleted": "Ресторан успешно удален"
   },
   "add_restaurant": {

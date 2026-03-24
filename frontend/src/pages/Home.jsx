@@ -453,6 +453,7 @@ const Home = () => {
                     border: 1.5px solid var(--border-color); background: transparent;
                     font-size: 0.85rem; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
                     display: flex; align-items: center; gap: 0.4rem;
+                    color: var(--text-main);
                 }
                 .filter-chip:hover {
                     border-color: var(--primary); transform: translateY(-1px);
@@ -553,7 +554,7 @@ const Home = () => {
                         <>
                             {/* Cuisine Type */}
                             <div style={{ marginBottom: '1.5rem' }}>
-                                <h4 style={{ marginBottom: '0.75rem', fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>{t('common.cuisine_type', 'Type de cuisine')}</h4>
+                                <h4 style={{ marginBottom: '0.75rem', fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, color: '#cbd5f5' }}>{t('common.cuisine_type', 'Type de cuisine')}</h4>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                                     {CUISINE_OPTIONS.map(cuisine => (
                                         <button
@@ -569,7 +570,7 @@ const Home = () => {
 
                             {/* Note minimale */}
                             <div style={{ marginBottom: '1.5rem' }}>
-                                <h4 style={{ marginBottom: '0.75rem', fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>{t('common.min_rating', 'Note minimale')}</h4>
+                                <h4 style={{ marginBottom: '0.75rem', fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, color: '#cbd5f5' }}>{t('common.min_rating', 'Note minimale')}</h4>
                                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                                     {RATING_OPTIONS.map(rating => (
                                         <label
@@ -609,7 +610,7 @@ const Home = () => {
 
                             {/* Prix */}
                             <div style={{ marginBottom: '1.5rem' }}>
-                                <h4 style={{ marginBottom: '0.75rem', fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>{t('common.price', 'Prix')}</h4>
+                                <h4 style={{ marginBottom: '0.75rem', fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, color: '#cbd5f5' }}>{t('common.price', 'Prix')}</h4>
                                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                                     {PRICE_OPTIONS.map(price => (
                                         <button
@@ -846,11 +847,13 @@ const Home = () => {
                             padding: '0 0.5rem'
                         }}>
                             <span style={{ 
-                                color: 'var(--text-muted)',
+                                color: 'var(--text-main)',
                                 fontSize: '0.9rem',
-                                fontWeight: '500'
+                                fontWeight: '600'
                             }}>
-                                {sortedRestaurants.length} {sortedRestaurants.length === 1 ? 'restaurant trouvé' : 'restaurants trouvés'}
+                                {sortedRestaurants.length === 1 
+                                    ? t('common.results_found', '1 restaurant trouvé')
+                                    : t('common.results_found_plural', `${sortedRestaurants.length} restaurants trouvés`)}
                             </span>
                         </div>
 

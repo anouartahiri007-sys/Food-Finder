@@ -151,7 +151,7 @@ export default function Footer() {
             {t('footer.newsletter_desc', "Subscribe to get the latest restaurant picks and exclusive offers.")}
           </p>
 
-          <form onSubmit={handleSubscribe} style={{display: 'flex', gap: '0.5rem'}}>
+          <form onSubmit={handleSubscribe} style={{display: 'flex', gap: '0.5rem', marginTop: '1rem'}}>
 
             <input
               type="email"
@@ -161,21 +161,22 @@ export default function Footer() {
               disabled={subscribing}
               style={{
                 flex: 1,
-                padding: "12px 16px",
-                border: "1px solid var(--border-color)",
+                padding: "14px 18px",
+                border: "2px solid var(--primary)",
                 background: "var(--card-bg)",
                 color: "var(--text-main)",
-                borderRadius: "8px 0 0 8px",
-                fontSize: "0.9rem",
+                borderRadius: "10px",
+                fontSize: "1rem",
                 outline: "none",
-                transition: "all 0.2s ease"
+                transition: "all 0.2s ease",
+                fontWeight: "500"
               }}
               onFocus={(e) => {
-                e.target.style.borderColor = "var(--primary)";
-                e.target.style.boxShadow = "0 0 0 3px rgba(240, 90, 40, 0.2)";
+                e.target.style.borderColor = "var(--primary-hover)";
+                e.target.style.boxShadow = "0 0 0 4px rgba(240, 90, 40, 0.15)";
               }}
               onBlur={(e) => {
-                e.target.style.borderColor = "var(--border-color)";
+                e.target.style.borderColor = "var(--primary)";
                 e.target.style.boxShadow = "none";
               }}
             />
@@ -184,19 +185,27 @@ export default function Footer() {
               type="submit"
               disabled={subscribing}
               style={{
-                padding: "12px 18px",
+                padding: "14px 24px",
                 border: "none",
                 background: "var(--primary)",
                 color: "#fff",
-                borderRadius: "0 8px 8px 0",
+                borderRadius: "10px",
                 cursor: "pointer",
-                transition: "all 0.2s ease"
+                transition: "all 0.2s ease",
+                fontWeight: "600",
+                fontSize: "1rem",
+                whiteSpace: "nowrap",
+                boxShadow: "0 4px 12px rgba(240, 90, 40, 0.3)"
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = "var(--primary-hover)";
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow = "0 6px 16px rgba(240, 90, 40, 0.4)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "var(--primary)";
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 4px 12px rgba(240, 90, 40, 0.3)";
               }}
             >
               <Send size={18}/>

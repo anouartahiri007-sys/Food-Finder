@@ -152,6 +152,9 @@
     "search": "بحث...",
     "no_result": "لم يتم العثور على مطعم",
     "new_this_week": "+5 جديد هذا الأسبوع",
+    "results_found": "{{count}} مطعم تم العثور عليه",
+    "results_found_plural": "{{count}} مطاعم تم العثور عليها",
+    "filters": "مرشحات",
     "restaurant_deleted": "تم حذف المطعم بنجاح"
   },
   "add_restaurant": {

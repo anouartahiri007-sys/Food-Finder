@@ -152,6 +152,9 @@
     "search": "Rechercher...",
     "no_result": "Aucun restaurant trouvé",
     "new_this_week": "+5 nouveaux cette semaine",
+    "results_found": "{{count}} restaurant trouvé",
+    "results_found_plural": "{{count}} restaurants trouvés",
+    "filters": "Filtres",
     "restaurant_deleted": "Restaurant supprimé avec succès"
   },
   "add_restaurant": {

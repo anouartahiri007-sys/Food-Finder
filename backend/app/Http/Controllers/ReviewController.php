@@ -100,6 +100,14 @@ class ReviewController extends Controller
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
+        // Check if user is blocked
+        $user = auth()->user();
+        if ($user->is_blocked) {
+            return response()->json([
+                'message' => 'Votre compte est bloqué. Vous ne pouvez pas générer d\'avis.'
+            ], 403);
+        }
+
         $restaurant = Restaurant::findOrFail($restaurantId);
         
         // Sample data for dynamic reviews
@@ -164,7 +172,7 @@ class ReviewController extends Controller
                 [
                     'name' => $name,
                     'password' => bcrypt('password123'),
-                    'role' => 'user',
+                    'role' => 'customer',
                     'is_blocked' => false,
                 ]
             );
