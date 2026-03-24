@@ -14,7 +14,8 @@ const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1517248135467-4c7edcad3
 // Helper to get full image URL
 const getFullImageUrl = (url) => {
     if (!url) return DEFAULT_IMAGE;
-    if (url.startsWith('http')) return url;
+    // If it's already a full URL (http/https), return as is
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
     const prefix = url.startsWith('/') ? '' : '/';
     return `${API_BASE_URL}${prefix}${url}`;
 };
@@ -41,6 +42,27 @@ const RestaurantDetail = () => {
     const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
     const isRestaurantOwner = currentUser?.role === 'owner' && restaurant?.user_id === currentUser?.id;
 
+    // Auto-generate reviews on first load (if none exist)
+    useEffect(() => {
+        const autoGenerateReviews = async () => {
+            if (restaurant && (!restaurant.reviews || restaurant.reviews.length === 0)) {
+                try {
+                    const token = localStorage.getItem('token');
+                    if (token) {
+                        await api.post(`/restaurants/${id}/reviews/generate`);
+                        // Refresh to show generated reviews
+                        const response = await api.get(`/restaurants/${id}`);
+                        setRestaurant(response.data);
+                    }
+                } catch (err) {
+                    // Silently fail - reviews will just be empty
+                }
+            }
+        };
+        autoGenerateReviews();
+    }, [restaurant?.id]);
+
+    // Fetch restaurant data
     useEffect(() => {
         const fetchRestaurant = async () => {
             try {
@@ -108,10 +130,23 @@ const RestaurantDetail = () => {
         }
     };
 
-    // Placeholder for dynamic reviews - functionality removed
+    // Handle generate dynamic reviews (kept for backward compatibility)
     const handleGenerateDynamicReviews = async () => {
-        // This function is kept as placeholder but does nothing
-        // Dynamic reviews feature has been removed
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                toast.error(t('auth.login_required', 'Veuillez vous connecter pour générer des avis'));
+                return;
+            }
+            
+            const response = await api.post(`/restaurants/${id}/reviews/generate`);
+            toast.success(response.data.message || 'Avis dynamiques générés avec succès !');
+            // Refresh restaurant data
+            const restaurantResponse = await api.get(`/restaurants/${id}`);
+            setRestaurant(restaurantResponse.data);
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Erreur lors de la génération des avis');
+        }
     };
 
     // Handle report submission
@@ -250,36 +285,45 @@ const RestaurantDetail = () => {
                         >
                             <ChevronRight size={24} color="#333" />
                         </button>
-                        {/* Dots Indicators */}
-                        <div style={{
-                            position: 'absolute',
-                            bottom: '100px',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            display: 'flex',
-                            gap: '0.5rem',
-                            zIndex: 10
-                        }}>
-                            {allImages.map((_, index) => (
-                                <button
-                                    key={index}
-                                    onClick={() => {
-                                        setCurrentImageIndex(index);
-                                        setImageError(false);
-                                    }}
-                                    style={{
-                                        width: index === currentImageIndex ? '24px' : '10px',
-                                        height: '10px',
-                                        borderRadius: '5px',
-                                        border: 'none',
-                                        background: index === currentImageIndex ? '#fff' : 'rgba(255,255,255,0.5)',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.3s ease'
-                                    }}
-                                />
-                            ))}
-                        </div>
                     </>
+                )}
+                
+                {/* Thumbnail Gallery - shown when there are multiple images */}
+                {allImages.length > 1 && (
+                    <div style={{
+                        position: 'absolute',
+                        bottom: '60px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        display: 'flex',
+                        gap: '8px',
+                        zIndex: 10,
+                        padding: '8px 12px',
+                        background: 'rgba(0,0,0,0.6)',
+                        borderRadius: '12px',
+                        backdropFilter: 'blur(10px)'
+                    }}>
+                        {allImages.map((img, index) => (
+                            <button
+                                key={index}
+                                onClick={() => {
+                                    setCurrentImageIndex(index);
+                                    setImageError(false);
+                                }}
+                                style={{
+                                    width: index === currentImageIndex ? '50px' : '40px',
+                                    height: index === currentImageIndex ? '50px' : '40px',
+                                    borderRadius: '8px',
+                                    border: index === currentImageIndex ? '2px solid var(--primary)' : '2px solid transparent',
+                                    overflow: 'hidden',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s ease',
+                                    padding: 0,
+                                    background: `url(${img}) center/cover`
+                                }}
+                            />
+                        ))}
+                    </div>
                 )}
                 
                 {/* Back Button - positioned at top left of hero */}

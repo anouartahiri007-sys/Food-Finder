@@ -6,8 +6,8 @@ import { useNavigate } from 'react-router-dom';
 
 // Helper to get full image URL
 const getFullImageUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('http')) return url;
+    if (!url) return 'https://via.placeholder.com/400';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
     const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api').replace('/api', '');
     const prefix = url.startsWith('/') ? '' : '/';
     return `${API_BASE_URL}${prefix}${url}`;

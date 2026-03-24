@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Restaurant;
+use App\Models\Photo;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -251,7 +252,20 @@ class RestaurantSeeder extends Seeder
 
         foreach ($restaurants as $data) {
             $data['user_id'] = $owner->id;
-            Restaurant::create($data);
+            $restaurant = Restaurant::create($data);
+            
+            // Add multiple photos for each restaurant
+            $numPhotos = rand(2, 5);
+            $shuffledImages = $sampleImages;
+            shuffle($shuffledImages);
+            
+            for ($i = 0; $i < $numPhotos; $i++) {
+                $restaurant->photos()->create([
+                    'url' => $shuffledImages[$i],
+                    'type' => 'restaurant',
+                    'user_id' => $owner->id,
+                ]);
+            }
         }
     }
 }

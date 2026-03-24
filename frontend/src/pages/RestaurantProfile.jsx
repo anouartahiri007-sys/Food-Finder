@@ -325,7 +325,7 @@ const RestaurantProfile = () => {
                                         className="restaurant-card-image"
                                     />
                                     <div style={{ flex: 1 }}>
-                                        <h3 style={{ margin: '0 0 0.5rem 0' }}>{restaurant.name}</h3>
+                                        <h3 style={{ margin: '0 0 0.5rem 0', color: '#fff' }}>{restaurant.name}</h3>
                                         <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                             <MapPin size={14} /> {restaurant.address}
                                         </p>

@@ -4,6 +4,15 @@ import { toast } from 'react-toastify';
 import api from '../api/axios';
 import { useNavigate, Link } from 'react-router-dom';
 
+// Helper to get full image URL
+const getFullImageUrl = (url) => {
+    if (!url) return 'https://via.placeholder.com/400';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api').replace('/api', '');
+    const prefix = url.startsWith('/') ? '' : '/';
+    return `${API_BASE_URL}${prefix}${url}`;
+};
+
 const RestaurateurDashboard = () => {
     const navigate = useNavigate();
     const [restaurants, setRestaurants] = useState([]);
@@ -375,7 +384,7 @@ const RestaurateurDashboard = () => {
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
                             {restaurants.map(res => (
                                 <div key={res.id} className="card" style={{ padding: '0', overflow: 'hidden', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
-                                    <div style={{ height: '160px', background: `linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.5)), url(${res.image_url || `https://picsum.photos/seed/${res.id}/600/300`})`, backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'flex-end', padding: '1.2rem' }}>
+                                    <div style={{ height: '160px', background: `linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.5)), url(${getFullImageUrl(res.image_url) || `https://picsum.photos/seed/${res.id}/600/300`})`, backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'flex-end', padding: '1.2rem' }}>
                                         <div>
                                             <h3 style={{ color: 'white', fontSize: '1.4rem', fontWeight: '700', textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>{res.name}</h3>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'rgba(255,255,255,0.9)', fontSize: '0.9rem' }}>
@@ -829,7 +838,7 @@ const RestaurateurDashboard = () => {
                                 {restaurantPhotos.map(photo => (
                                     <div key={photo.id} style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', aspectRatio: '1' }}>
                                         <img 
-                                            src={photo.url} 
+                                            src={getFullImageUrl(photo.url)} 
                                             alt="" 
                                             style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                                         />
